@@ -14,53 +14,45 @@ export default function ShotStrip({ shots, shotsNeeded, theme, onRemove }: ShotS
   const slots = Array.from({ length: shotsNeeded }, (_, i) => shots[i] ?? null)
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="font-mono text-xs" style={{ color: theme.accentColor + '99' }}>
-        HASIL FOTO ({shots.length}/{shotsNeeded})
+    <div className="flex flex-col gap-2.5">
+      <p className="section-label text-xs md:text-sm">
+        Hasil Foto ({shots.length}/{shotsNeeded})
       </p>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2.5 overflow-x-auto pb-1">
         {slots.map((shot, i) => (
           <div
             key={shot?.id ?? `empty-${i}`}
-            className="relative flex-shrink-0 rounded-lg overflow-hidden"
+            className="relative flex-shrink-0 rounded-xl overflow-hidden transition-all"
             style={{
-              width: 88,
-              height: 66,
-              border: shot
-                ? `2px solid ${theme.accentColor}66`
-                : '2px dashed rgba(255,255,255,0.1)',
-              background: shot ? undefined : 'rgba(255,255,255,0.02)',
+              width: 92,
+              height: 69,
+              border: shot ? '2px solid var(--accent-blue)' : '2px dashed var(--border)',
+              background: shot ? undefined : 'var(--bg-secondary)',
+              boxShadow: shot ? 'var(--shadow-sm)' : 'none',
             }}
           >
             {shot ? (
               <>
-                {/* Photo thumbnail */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={shot.dataUrl}
-                  alt={`Shot ${i + 1}`}
-                  className="w-full h-full object-cover"
-                  style={{ filter: shot.filterId !== 'none' ? `var(--filter-${shot.filterId})` : undefined }}
-                />
-                {/* Remove button */}
+                <img src={shot.dataUrl} alt={`Shot ${i + 1}`} className="w-full h-full object-cover" />
                 <button
                   onClick={() => onRemove(shot.id)}
-                  className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center bg-black/70 hover:bg-red-500/80 transition-colors"
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center transition-colors"
+                  style={{ background: 'rgba(239,68,68,0.9)', boxShadow: 'var(--shadow-sm)' }}
                   aria-label="Hapus foto"
                 >
                   <X size={10} className="text-white" />
                 </button>
-                {/* Shot number */}
                 <span
-                  className="absolute bottom-0.5 left-1 font-mono text-[9px]"
-                  style={{ color: theme.accentColor }}
+                  className="absolute bottom-1 left-1.5 text-[9px] font-semibold px-1.5 py-0.5 rounded"
+                  style={{ background: 'var(--accent-blue)', color: 'white' }}
                 >
                   #{i + 1}
                 </span>
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <span className="font-mono text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
                   {i + 1}
                 </span>
               </div>

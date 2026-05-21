@@ -2,11 +2,11 @@
 
 import type { BoothStep } from '@/types'
 
-const STEPS: { id: BoothStep; label: string; emoji: string }[] = [
-  { id: 'theme',  label: 'Tema',   emoji: '🎨' },
-  { id: 'camera', label: 'Foto',   emoji: '📷' },
-  { id: 'editor', label: 'Edit',   emoji: '✏️' },
-  { id: 'result', label: 'Hasil',  emoji: '🖼' },
+const STEPS: { id: BoothStep; label: string; number: number }[] = [
+  { id: 'theme',  label: 'Tema',   number: 1 },
+  { id: 'camera', label: 'Foto',   number: 2 },
+  { id: 'editor', label: 'Edit',   number: 3 },
+  { id: 'result', label: 'Hasil',  number: 4 },
 ]
 
 const ORDER: BoothStep[] = ['theme', 'camera', 'editor', 'result']
@@ -18,7 +18,6 @@ interface StepIndicatorProps {
 
 export default function StepIndicator({
   currentStep,
-  accentColor = '#ff2d78',
 }: StepIndicatorProps) {
   const currentIdx = ORDER.indexOf(currentStep)
 
@@ -33,35 +32,35 @@ export default function StepIndicator({
             {/* Step bubble */}
             <div
               className="flex flex-col items-center gap-1"
-              style={{ minWidth: 60 }}
+              style={{ minWidth: 56 }}
             >
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all"
                 style={{
                   background: active
-                    ? accentColor
+                    ? 'var(--accent-blue)'
                     : done
-                    ? `${accentColor}33`
-                    : 'rgba(255,255,255,0.06)',
+                    ? 'var(--accent-blue-50)'
+                    : 'var(--bg-muted)',
                   border: active
-                    ? `2px solid ${accentColor}`
+                    ? '2px solid var(--accent-blue)'
                     : done
-                    ? `2px solid ${accentColor}55`
-                    : '2px solid rgba(255,255,255,0.1)',
-                  color: active ? '#fff' : done ? accentColor : 'rgba(255,255,255,0.3)',
-                  boxShadow: active ? `0 0 12px ${accentColor}66` : 'none',
+                    ? '2px solid var(--accent-blue-100)'
+                    : '2px solid var(--border)',
+                  color: active ? '#fff' : done ? 'var(--accent-blue)' : 'var(--text-muted)',
+                  boxShadow: active ? 'var(--shadow-blue)' : 'none',
                 }}
               >
-                {done ? '✓' : step.emoji}
+                {done ? '✓' : step.number}
               </div>
               <span
-                className="font-mono text-[10px]"
+                className="text-[10px] font-medium"
                 style={{
                   color: active
-                    ? accentColor
+                    ? 'var(--accent-blue)'
                     : done
-                    ? `${accentColor}88`
-                    : 'rgba(255,255,255,0.2)',
+                    ? 'var(--accent-blue)'
+                    : 'var(--text-muted)',
                 }}
               >
                 {step.label}
@@ -71,11 +70,11 @@ export default function StepIndicator({
             {/* Connector line */}
             {i < STEPS.length - 1 && (
               <div
-                className="h-0.5 w-8 mb-5 transition-all"
+                className="h-0.5 w-6 mb-5 transition-all rounded-full"
                 style={{
                   background: i < currentIdx
-                    ? accentColor
-                    : 'rgba(255,255,255,0.08)',
+                    ? 'var(--accent-blue)'
+                    : 'var(--border)',
                 }}
               />
             )}
