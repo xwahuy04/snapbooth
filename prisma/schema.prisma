@@ -1,0 +1,14 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Session {
+  id        String   @id
+  imageUrl  String
+  themeId   String
+  createdAt DateTime @default(now())
+}
