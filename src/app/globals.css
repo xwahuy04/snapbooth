@@ -283,6 +283,16 @@
     overflow-wrap: break-word;
     word-break: break-word;
   }
+
+  .strip-canvas {
+    min-height: 280px;
+  }
+  @media (min-width: 640px) {
+    .strip-canvas { min-height: 360px; }
+  }
+  @media (min-width: 1024px) {
+    .strip-canvas { min-height: 420px; }
+  }
 }
 
 @keyframes countdown-pulse {

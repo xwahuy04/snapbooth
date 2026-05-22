@@ -23,9 +23,11 @@ export interface UsePhotoBoothReturn {
   setCaptionColor: (c: string) => void
   addShot: (dataUrl: string) => void
   removeShot: (id: string) => void
-  addSticker: (emoji: string) => void
+  addSticker: (emoji: string, x?: number, y?: number) => string
   removeSticker: (id: string) => void
   moveSticker: (id: string, x: number, y: number) => void
+  resizeSticker: (id: string, size: number) => void
+  rotateSticker: (id: string, rotation: number) => void
   buildStrip: () => Promise<void>
   downloadStrip: () => void
   shareStrip: () => Promise<boolean>
@@ -78,13 +80,21 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
     setEditor((e) => ({ ...e, shots: e.shots.filter((s) => s.id !== id) }))
   }, [])
 
-  const addSticker = useCallback((emoji: string) => {
-    const sticker: Sticker = {
-      id: generateSessionId(), emoji,
-      x: 40 + Math.random() * 20, y: 40 + Math.random() * 20,
-      size: 32, rotation: (Math.random() - 0.5) * 30,
-    }
-    setEditor((e) => ({ ...e, stickers: [...e.stickers, sticker] }))
+  const addSticker = useCallback((emoji: string, x?: number, y?: number) => {
+    const id = generateSessionId()
+    setEditor((e) => {
+      const n = e.stickers.length
+      const sticker: Sticker = {
+        id,
+        emoji,
+        x: x ?? 48 + (n % 3) * 8,
+        y: y ?? 42 + Math.floor(n / 3) * 12,
+        size: 56,
+        rotation: (Math.random() - 0.5) * 24,
+      }
+      return { ...e, stickers: [...e.stickers, sticker] }
+    })
+    return id
   }, [])
 
   const removeSticker = useCallback((id: string) => {
@@ -95,6 +105,20 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
     setEditor((e) => ({ ...e, stickers: e.stickers.map((s) => (s.id === id ? { ...s, x, y } : s)) }))
   }, [])
 
+  const resizeSticker = useCallback((id: string, size: number) => {
+    setEditor((e) => ({
+      ...e,
+      stickers: e.stickers.map((s) => (s.id === id ? { ...s, size: Math.round(size) } : s)),
+    }))
+  }, [])
+
+  const rotateSticker = useCallback((id: string, rotation: number) => {
+    setEditor((e) => ({
+      ...e,
+      stickers: e.stickers.map((s) => (s.id === id ? { ...s, rotation } : s)),
+    }))
+  }, [])
+
   const buildStrip = useCallback(async () => {
     const theme = THEMES.find((t) => t.id === editor.activeTheme) ?? THEMES[0]
     const filter = FILTERS.find((f) => f.id === editor.activeFilter) ?? FILTERS[0]
@@ -103,7 +127,14 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
     setIsComposing(true)
     setUploadError(null)
     try {
-      const url = await composeStrip({ shots, theme, layout: selectedLayout, caption: editor.caption, captionColor: editor.captionColor })
+      const url = await composeStrip({
+        shots,
+        theme,
+        layout: selectedLayout,
+        caption: editor.caption,
+        captionColor: editor.captionColor,
+        stickers: editor.stickers,
+      })
       setStripDataUrl(url)
       setStep('result')
 
@@ -156,7 +187,7 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
     setLayout, setTheme, setFilter,
     setCaption, setCaptionColor,
     addShot, removeShot,
-    addSticker, removeSticker, moveSticker,
+    addSticker, removeSticker, moveSticker, resizeSticker, rotateSticker,
     buildStrip, downloadStrip, shareStrip,
     resetSession,
   }

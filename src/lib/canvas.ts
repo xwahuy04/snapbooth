@@ -1,4 +1,5 @@
-import type { PhotoShot, FrameTheme, BoothLayout } from '@/types'
+import type { PhotoShot, FrameTheme, BoothLayout, Sticker } from '@/types'
+import { scaleStickerSize } from '@/lib/sticker-scale'
 
 // ─── Shot Capture ─────────────────────────────────────────────
 /**
@@ -50,6 +51,7 @@ interface ComposeOptions {
   layout: BoothLayout
   caption?: string
   captionColor?: string
+  stickers?: Sticker[]
 }
 
 /**
@@ -57,7 +59,7 @@ interface ComposeOptions {
  * Returns base64 PNG data URL of the final strip.
  */
 export async function composeStrip(options: ComposeOptions): Promise<string> {
-  const { shots, theme, layout, caption, captionColor } = options
+  const { shots, theme, layout, caption, captionColor, stickers = [] } = options
 
   const SHOT_W = 480
   const SHOT_H = 360
@@ -144,7 +146,56 @@ export async function composeStrip(options: ComposeOptions): Promise<string> {
   ctx.fillText(dateStr, canvasW - PADDING, canvasH - 8)
   ctx.globalAlpha = 1
 
+  // Stickers on top (last layer) — scaled & outlined for clear export
+  for (const sticker of stickers) {
+    drawStickerOnCanvas(ctx, sticker, canvasW, canvasH)
+  }
+
   return canvas.toDataURL('image/png', 1.0)
+}
+
+const EMOJI_FONT =
+  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif'
+
+function drawStickerOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  sticker: Sticker,
+  canvasW: number,
+  canvasH: number
+) {
+  // Sama dengan pratinjau: ukuran mengikuti lebar strip (bukan pengali ekstra)
+  const fontSize = Math.max(scaleStickerSize(sticker.size, canvasW), 20)
+
+  const px = (sticker.x / 100) * canvasW
+  const py = (sticker.y / 100) * canvasH
+
+  ctx.save()
+  ctx.translate(px, py)
+  ctx.rotate((sticker.rotation * Math.PI) / 180)
+  ctx.font = `${fontSize}px ${EMOJI_FONT}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  // White + dark outline agar terbaca di foto terang/gelap
+  const outline = Math.max(3, fontSize * 0.1)
+  ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
+  ctx.lineWidth = outline * 1.4
+  ctx.strokeStyle = 'rgba(255,255,255,0.92)'
+  ctx.strokeText(sticker.emoji, 0, 0)
+  ctx.lineWidth = outline * 0.7
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)'
+  ctx.strokeText(sticker.emoji, 0, 0)
+
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'
+  ctx.shadowBlur = fontSize * 0.12
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = fontSize * 0.05
+  ctx.fillStyle = '#000000'
+  ctx.fillText(sticker.emoji, 0, 0)
+  ctx.fillText(sticker.emoji, 0, 0)
+
+  ctx.restore()
 }
 
 // ─── Helper ───────────────────────────────────────────────────
