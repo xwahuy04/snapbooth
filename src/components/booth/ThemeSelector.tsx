@@ -18,29 +18,35 @@ export default function ThemeSelector({
   onSelectLayout,
 }: ThemeSelectorProps) {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-10">
       {/* Layout picker */}
-      <div>
-        <h3 className="section-label mb-3">
+      <div className="flex flex-col gap-4">
+        <h3 className="text-xs font-bold tracking-[0.15em] text-[var(--text-secondary)] uppercase ml-1">
           Layout Foto
         </h3>
-        <div className="grid grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {LAYOUTS.map((layout) => {
             const active = layout.id === selectedLayout.id
             return (
               <button
                 key={layout.id}
                 onClick={() => onSelectLayout(layout)}
-                className="flex flex-col items-center gap-2 p-3.5 rounded-xl transition-all hover:shadow-md active:scale-[0.98]"
+                className="group relative flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 ease-out cursor-pointer hover:-translate-y-0.5"
                 style={{
-                  background: active ? 'var(--accent-blue-50)' : 'var(--bg-secondary)',
-                  border: active ? '2px solid var(--accent-blue)' : '2px solid var(--border)',
+                  background: active ? 'var(--accent-blue-50)' : 'var(--bg-card)',
+                  // Mengubah border dari 2px menjadi 1px agar jauh lebih elegan
+                  border: active ? '1px solid var(--accent-blue)' : '1px solid var(--border)',
                   boxShadow: active ? 'var(--shadow-blue)' : 'var(--shadow-xs)',
                 }}
               >
-                <span className="text-xl">{layout.icon}</span>
+                <div 
+                  className={`text-2xl transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}
+                  style={{ color: active ? 'var(--accent-blue)' : 'var(--text-primary)' }}
+                >
+                  {layout.icon}
+                </div>
                 <span
-                  className="text-[11px] font-medium"
+                  className="text-[13px] font-semibold transition-colors"
                   style={{ color: active ? 'var(--accent-blue)' : 'var(--text-secondary)' }}
                 >
                   {layout.label}
@@ -52,31 +58,30 @@ export default function ThemeSelector({
       </div>
 
       {/* Theme picker */}
-      <div>
-        <h3 className="section-label mb-3">
+      <div className="flex flex-col gap-4">
+        <h3 className="text-xs font-bold tracking-[0.15em] text-[var(--text-secondary)] uppercase ml-1">
           Pilih Tema
         </h3>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {THEMES.map((theme) => {
             const active = theme.id === selectedThemeId
             return (
               <button
                 key={theme.id}
                 onClick={() => onSelectTheme(theme.id)}
-                className="flex items-center gap-3 p-3.5 text-left rounded-xl transition-all hover:shadow-md active:scale-[0.98] relative overflow-hidden"
+                className="group flex items-center gap-4 p-4 text-left rounded-2xl transition-all duration-300 ease-out cursor-pointer hover:-translate-y-0.5"
                 style={{
                   background: active ? 'var(--accent-blue-50)' : 'var(--bg-card)',
-                  border: active ? '2px solid var(--accent-blue)' : '2px solid var(--border)',
+                  border: active ? '1px solid var(--accent-blue)' : '1px solid var(--border)',
                   boxShadow: active ? 'var(--shadow-blue)' : 'var(--shadow-xs)',
                 }}
               >
-                {/* Color swatch */}
+                {/* Color swatch - Diubah menjadi bulat sempurna agar lebih modern */}
                 <div
-                  className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center text-lg"
+                  className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-xl shadow-inner"
                   style={{
                     background: theme.previewColor,
-                    border: `2.5px solid ${theme.accentColor}`,
-                    boxShadow: `0 2px 8px -2px ${theme.accentColor}44`,
+                    border: `1px solid ${theme.accentColor}40`,
                   }}
                 >
                   {theme.emoji}
@@ -85,28 +90,28 @@ export default function ThemeSelector({
                 {/* Text */}
                 <div className="flex-1 min-w-0">
                   <div
-                    className="font-display font-semibold text-sm truncate"
+                    className="font-display font-bold text-[15px] truncate"
                     style={{ color: 'var(--text-primary)' }}
                   >
                     {theme.name}
                   </div>
                   <div
-                    className="text-[11px] truncate"
+                    className="text-[12px] truncate font-medium mt-0.5 opacity-80"
                     style={{ color: 'var(--text-secondary)' }}
                   >
                     {theme.description}
                   </div>
                 </div>
 
-                {/* Active check */}
-                {active && (
-                  <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'var(--accent-blue)' }}
-                  >
-                    <Check size={11} className="text-white" />
-                  </div>
-                )}
+                {/* Active check - Animasi smooth saat dipilih */}
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                    active ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
+                  }`}
+                  style={{ background: 'var(--accent-blue)' }}
+                >
+                  <Check size={14} className="text-white" />
+                </div>
               </button>
             )
           })}

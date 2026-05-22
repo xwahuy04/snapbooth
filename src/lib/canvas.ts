@@ -9,9 +9,27 @@ export function captureFrameFromVideo(
   video: HTMLVideoElement,
   filterCSS: string
 ): string {
+  const targetAspect = 4 / 3
+  const videoWidth = video.videoWidth || 640
+  const videoHeight = video.videoHeight || 480
+  const videoAspect = videoWidth / videoHeight
+
+  let srcX = 0
+  let srcY = 0
+  let srcWidth = videoWidth
+  let srcHeight = videoHeight
+
+  if (videoAspect > targetAspect) {
+    srcWidth = Math.round(videoHeight * targetAspect)
+    srcX = Math.round((videoWidth - srcWidth) / 2)
+  } else if (videoAspect < targetAspect) {
+    srcHeight = Math.round(videoWidth / targetAspect)
+    srcY = Math.round((videoHeight - srcHeight) / 2)
+  }
+
   const canvas = document.createElement('canvas')
-  canvas.width = video.videoWidth || 640
-  canvas.height = video.videoHeight || 480
+  canvas.width = srcWidth
+  canvas.height = srcHeight
   const ctx = canvas.getContext('2d')!
 
   // Mirror (selfie cam)
@@ -20,7 +38,7 @@ export function captureFrameFromVideo(
 
   // Apply filter
   ctx.filter = filterCSS === 'none' ? 'none' : filterCSS
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+  ctx.drawImage(video, srcX, srcY, srcWidth, srcHeight, 0, 0, srcWidth, srcHeight)
 
   return canvas.toDataURL('image/png')
 }

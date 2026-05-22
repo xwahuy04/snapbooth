@@ -12,10 +12,10 @@ interface UsePhotoBoothReturn {
   selectedLayout: BoothLayout
   stripDataUrl: string | null
   isComposing: boolean
-  sessionId: string
-  shareUrl: string | null
   isUploading: boolean
   uploadError: string | null
+  shareUrl: string | null
+  sessionId: string
   setLayout: (l: BoothLayout) => void
   setTheme: (id: string) => void
   setFilter: (id: string) => void
@@ -48,44 +48,28 @@ const DEFAULT_EDITOR: EditorState = {
 export function usePhotoBooth(): UsePhotoBoothReturn {
   const [step, setStep] = useState<BoothStep>('theme')
   const [editor, setEditor] = useState<EditorState>(DEFAULT_EDITOR)
-  const [selectedLayout, setSelectedLayout] = useState<BoothLayout>(LAYOUTS[2]) // 4x1 default
+  const [selectedLayout, setSelectedLayout] = useState<BoothLayout>(LAYOUTS[2])
   const [stripDataUrl, setStripDataUrl] = useState<string | null>(null)
   const [isComposing, setIsComposing] = useState(false)
-  const [sessionId] = useState(generateSessionId)
-  const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [sessionId] = useState(generateSessionId)
 
-  // ─── Theme / Filter / Caption ─────────────────────────────
-  const setTheme = useCallback((id: string) => {
-    setEditor((e) => ({ ...e, activeTheme: id }))
-  }, [])
-
-  const setFilter = useCallback((id: string) => {
-    setEditor((e) => ({ ...e, activeFilter: id }))
-  }, [])
-
-  const setCaption = useCallback((caption: string) => {
-    setEditor((e) => ({ ...e, caption }))
-  }, [])
-
-  const setCaptionColor = useCallback((captionColor: string) => {
-    setEditor((e) => ({ ...e, captionColor }))
-  }, [])
+  const setTheme = useCallback((id: string) => setEditor((e) => ({ ...e, activeTheme: id })), [])
+  const setFilter = useCallback((id: string) => setEditor((e) => ({ ...e, activeFilter: id })), [])
+  const setCaption = useCallback((caption: string) => setEditor((e) => ({ ...e, caption })), [])
+  const setCaptionColor = useCallback((captionColor: string) => setEditor((e) => ({ ...e, captionColor })), [])
 
   const setLayout = useCallback((layout: BoothLayout) => {
     setSelectedLayout(layout)
-    setEditor((e) => ({ ...e, shots: [] })) // reset shots when layout changes
+    setEditor((e) => ({ ...e, shots: [] }))
   }, [])
 
-  // ─── Shots ────────────────────────────────────────────────
   const addShot = useCallback(
     (dataUrl: string) => {
       const shot = makeShot(dataUrl, editor.activeFilter)
-      setEditor((e) => {
-        const shots = [...e.shots, shot].slice(0, selectedLayout.shotCount)
-        return { ...e, shots }
-      })
+      setEditor((e) => ({ ...e, shots: [...e.shots, shot].slice(0, selectedLayout.shotCount) }))
     },
     [editor.activeFilter, selectedLayout.shotCount]
   )
@@ -94,15 +78,11 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
     setEditor((e) => ({ ...e, shots: e.shots.filter((s) => s.id !== id) }))
   }, [])
 
-  // ─── Stickers ─────────────────────────────────────────────
   const addSticker = useCallback((emoji: string) => {
     const sticker: Sticker = {
-      id: generateSessionId(),
-      emoji,
-      x: 40 + Math.random() * 20,
-      y: 40 + Math.random() * 20,
-      size: 32,
-      rotation: (Math.random() - 0.5) * 30,
+      id: generateSessionId(), emoji,
+      x: 40 + Math.random() * 20, y: 40 + Math.random() * 20,
+      size: 32, rotation: (Math.random() - 0.5) * 30,
     }
     setEditor((e) => ({ ...e, stickers: [...e.stickers, sticker] }))
   }, [])
@@ -112,13 +92,9 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
   }, [])
 
   const moveSticker = useCallback((id: string, x: number, y: number) => {
-    setEditor((e) => ({
-      ...e,
-      stickers: e.stickers.map((s) => (s.id === id ? { ...s, x, y } : s)),
-    }))
+    setEditor((e) => ({ ...e, stickers: e.stickers.map((s) => (s.id === id ? { ...s, x, y } : s)) }))
   }, [])
 
-  // ─── Compose / Export ─────────────────────────────────────
   const buildStrip = useCallback(async () => {
     const theme = THEMES.find((t) => t.id === editor.activeTheme) ?? THEMES[0]
     const filter = FILTERS.find((f) => f.id === editor.activeFilter) ?? FILTERS[0]
@@ -127,39 +103,22 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
     setIsComposing(true)
     setUploadError(null)
     try {
-      const url = await composeStrip({
-        shots,
-        theme,
-        layout: selectedLayout,
-        caption: editor.caption,
-        captionColor: editor.captionColor,
-      })
+      const url = await composeStrip({ shots, theme, layout: selectedLayout, caption: editor.caption, captionColor: editor.captionColor })
       setStripDataUrl(url)
       setStep('result')
 
-      // Upload to Cloudinary and database in the background
+      // Upload to get share URL
       setIsUploading(true)
       try {
         const res = await fetch('/api/upload', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            dataUrl: url,
-            sessionId,
-            themeId: editor.activeTheme,
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dataUrl: url, sessionId, themeId: editor.activeTheme }),
         })
         const data = await res.json()
-        if (res.ok && data.success) {
-          setShareUrl(data.shareUrl)
-        } else {
-          setUploadError(data.error || 'Gagal menyimpan ke database')
-        }
-      } catch (err: any) {
-        console.error('Upload failed:', err)
-        setUploadError(err.message || 'Gagal terhubung ke database')
+        if (data.shareUrl) setShareUrl(data.shareUrl)
+      } catch {
+        setUploadError('Gagal menyimpan ke cloud')
       } finally {
         setIsUploading(false)
       }
@@ -192,8 +151,8 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
     step, setStep,
     editor, selectedLayout,
     stripDataUrl, isComposing,
+    isUploading, uploadError, shareUrl,
     sessionId,
-    shareUrl, isUploading, uploadError,
     setLayout, setTheme, setFilter,
     setCaption, setCaptionColor,
     addShot, removeShot,
