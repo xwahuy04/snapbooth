@@ -1,25 +1,50 @@
 import Link from 'next/link'
-import { ArrowLeft, Camera, Image } from 'lucide-react'
+import { redirect } from 'next/navigation'
+import { ArrowLeft, Camera, Image, LogOut } from 'lucide-react'
 import AppShell from '@/components/layout/AppShell'
 import PageContainer from '@/components/ui/PageContainer'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 import { THEMES } from '@/lib/data'
+import { signOut } from 'next-auth/react'
 
 export const dynamic = 'force-dynamic'
 
 export default async function GalleryPage() {
+  // Check authentication
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect('/auth/login')
+  }
+
+  // Fetch only user's sessions
   const sessions = await prisma.session.findMany({
+    where: {
+      userId: session.user.id,
+    },
     orderBy: { createdAt: 'desc' },
   })
+
+  async function handleSignOut() {
+    'use server'
+    await signOut({ redirect: true, callbackUrl: '/auth/login' })
+  }
 
   return (
     <AppShell
       headerAction={
-        <Link href="/booth">
-          <button className="btn-primary text-xs">
-            <Camera size={13} /> Mulai Foto
-          </button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/booth">
+            <button className="btn-primary text-xs">
+              <Camera size={13} /> Mulai Foto
+            </button>
+          </Link>
+          <form action={handleSignOut}>
+            <button className="btn-secondary text-xs" title="Keluar">
+              <LogOut size={13} />
+            </button>
+          </form>
+        </div>
       }
     >
       <PageContainer size="wide" className="flex-1">
@@ -30,12 +55,20 @@ export default async function GalleryPage() {
           >
             <ArrowLeft size={12} /> Kembali ke Home
           </Link>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-            Galeri Foto Strip
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-muted md:text-base">
-            Menampilkan {sessions.length} hasil karya foto dari studio
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+                Galeri Foto Strip Saya
+              </h1>
+              <p className="mt-3 text-sm leading-relaxed text-muted md:text-base">
+                Menampilkan {sessions.length} foto Anda
+              </p>
+            </div>
+            <div className="text-right text-sm text-muted">
+              <p>Terlogin sebagai:</p>
+              <p className="font-semibold text-foreground">{session.user.email}</p>
+            </div>
+          </div>
         </header>
 
         {sessions.length === 0 ? <EmptyGallery /> : <GalleryGrid sessions={sessions} />}
@@ -52,7 +85,7 @@ function EmptyGallery() {
       </div>
       <h3 className="font-display mb-2 text-lg font-semibold text-foreground">Belum ada foto strip</h3>
       <p className="mb-8 max-w-xs text-sm leading-relaxed text-muted">
-        Jadilah orang pertama yang mengabadikan momen di SnapBooth!
+        Mulai ambil foto sekarang dan simpan ke galeri pribadi Anda!
       </p>
       <Link href="/booth">
         <button className="btn-primary text-sm">

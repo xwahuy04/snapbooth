@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 import { v2 as cloudinary } from 'cloudinary'
 
 cloudinary.config({
@@ -10,6 +11,17 @@ cloudinary.config({
 
 export async function POST(req: NextRequest) {
   try {
+    // Get session from auth
+    const session = await auth()
+
+    // Check if user is authenticated
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized - please login first' },
+        { status: 401 }
+      )
+    }
+
     const body = await req.json()
     const { dataUrl, sessionId, themeId } = body
 
@@ -17,24 +29,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    console.log(`Uploading session ${sessionId} to Cloudinary...`)
+    console.log(`Uploading session ${sessionId} for user ${session.user.id}...`)
 
     // Upload base64 image to Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(dataUrl, {
-      folder: 'snapbooth',
+      folder: `snapbooth/${session.user.id}`,
       public_id: sessionId,
-      tags: [themeId || 'default'],
+      tags: [themeId || 'default', session.user.id],
+      resource_type: 'auto',
     })
 
     const imageUrl = uploadResponse.secure_url
     console.log(`Uploaded successfully. Image URL: ${imageUrl}`)
 
-    // Save metadata to Supabase via Prisma
-    const session = await prisma.session.create({
+    // Save metadata to database with user association
+    const dbSession = await prisma.session.create({
       data: {
         id: sessionId,
         imageUrl: imageUrl,
         themeId: themeId || 'midnight',
+        userId: session.user.id,
       },
     })
 
@@ -43,11 +57,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      sessionId: session.id,
+      sessionId: dbSession.id,
       shareUrl,
       imageUrl,
-      themeId: session.themeId,
-      uploadedAt: session.createdAt.toISOString(),
+      themeId: dbSession.themeId,
+      uploadedAt: dbSession.createdAt.toISOString(),
     })
   } catch (err: any) {
     console.error('Upload error:', err)
