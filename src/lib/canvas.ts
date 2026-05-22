@@ -1,15 +1,18 @@
 import type { PhotoShot, FrameTheme, BoothLayout, Sticker } from '@/types'
-import { scaleStickerSize } from '@/lib/sticker-scale'
+import { FILTERS } from '@/lib/data'
+import { isLightColor, mixHex, rgbaFromHex } from '@/lib/color-utils'
+import { scaleStickerSize, STICKER_REF_STRIP_WIDTH } from '@/lib/sticker-scale'
 
-// ─── Shot Capture ─────────────────────────────────────────────
-/**
- * Capture a single frame from a <video> element onto a canvas.
- * Returns base64 PNG data URL.
- */
-export function captureFrameFromVideo(
-  video: HTMLVideoElement,
-  filterCSS: string
-): string {
+// ─── Layout constants (strip vertikal referensi ≈ lebar ini) ───
+const SHOT_W = 500
+const SHOT_H = 375
+const OUTER_PAD = 32
+const GAP = 16
+const PHOTO_RADIUS = 22
+const FONT_DISPLAY = '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif'
+const FONT_MONO = '"Space Mono", monospace'
+
+export function captureFrameFromVideo(video: HTMLVideoElement, filterCSS: string): string {
   const targetAspect = 4 / 3
   const videoWidth = video.videoWidth || 640
   const videoHeight = video.videoHeight || 480
@@ -33,18 +36,14 @@ export function captureFrameFromVideo(
   canvas.height = srcHeight
   const ctx = canvas.getContext('2d')!
 
-  // Mirror (selfie cam)
   ctx.translate(canvas.width, 0)
   ctx.scale(-1, 1)
-
-  // Apply filter
   ctx.filter = filterCSS === 'none' ? 'none' : filterCSS
   ctx.drawImage(video, srcX, srcY, srcWidth, srcHeight, 0, 0, srcWidth, srcHeight)
 
   return canvas.toDataURL('image/png')
 }
 
-// ─── Strip Composer ───────────────────────────────────────────
 interface ComposeOptions {
   shots: PhotoShot[]
   theme: FrameTheme
@@ -54,29 +53,19 @@ interface ComposeOptions {
   stickers?: Sticker[]
 }
 
-/**
- * Compose all shots into a final photo strip canvas.
- * Returns base64 PNG data URL of the final strip.
- */
 export async function composeStrip(options: ComposeOptions): Promise<string> {
   const { shots, theme, layout, caption, captionColor, stickers = [] } = options
 
-  const SHOT_W = 480
-  const SHOT_H = 360
-  const PADDING = 20
-  const BORDER = 6
-  const FOOTER_H = caption ? 60 : 40
-
+  const footerH = caption ? 88 : 64
   let canvasW: number
   let canvasH: number
 
   if (layout.id === '2x2') {
-    canvasW = SHOT_W * 2 + PADDING * 3
-    canvasH = SHOT_H * 2 + PADDING * 3 + FOOTER_H
+    canvasW = SHOT_W * 2 + GAP + OUTER_PAD * 2
+    canvasH = SHOT_H * 2 + GAP + OUTER_PAD * 2 + footerH
   } else {
-    // vertical strip
-    canvasW = SHOT_W + PADDING * 2
-    canvasH = SHOT_H * shots.length + PADDING * (shots.length + 1) + FOOTER_H
+    canvasW = SHOT_W + OUTER_PAD * 2
+    canvasH = SHOT_H * shots.length + GAP * (shots.length - 1) + OUTER_PAD * 2 + footerH
   }
 
   const canvas = document.createElement('canvas')
@@ -84,69 +73,22 @@ export async function composeStrip(options: ComposeOptions): Promise<string> {
   canvas.height = canvasH
   const ctx = canvas.getContext('2d')!
 
-  // Background
-  ctx.fillStyle = theme.backgroundColor
-  ctx.fillRect(0, 0, canvasW, canvasH)
-
-  // Draw each shot
-  const imagePromises = shots.map((shot) => loadImage(shot.dataUrl))
-  const images = await Promise.all(imagePromises)
-
-  images.forEach((img, i) => {
-    let x: number, y: number
-
-    if (layout.id === '2x2') {
-      const col = i % 2
-      const row = Math.floor(i / 2)
-      x = PADDING + col * (SHOT_W + PADDING)
-      y = PADDING + row * (SHOT_H + PADDING)
-    } else {
-      x = PADDING
-      y = PADDING + i * (SHOT_H + PADDING)
-    }
-
-    // Shot background / inner border
-    ctx.fillStyle = 'rgba(0,0,0,0.3)'
-    ctx.fillRect(x - 2, y - 2, SHOT_W + 4, SHOT_H + 4)
-
-    // Draw photo
-    ctx.drawImage(img, x, y, SHOT_W, SHOT_H)
-
-    // Border frame around each shot
-    const borderColor = theme.accentColor
-    ctx.strokeStyle = borderColor
-    ctx.lineWidth = BORDER
-    ctx.strokeRect(x + BORDER / 2, y + BORDER / 2, SHOT_W - BORDER, SHOT_H - BORDER)
-  })
-
-  // Watermark / footer
-  const footerY = canvasH - FOOTER_H + 10
-  ctx.fillStyle = theme.textColor
-  ctx.font = `bold 14px 'Space Mono', monospace`
-  ctx.textAlign = 'center'
-  ctx.globalAlpha = 0.7
-  ctx.fillText(theme.watermark || '✦ SNAPBOOTH', canvasW / 2, footerY + 10)
-  ctx.globalAlpha = 1
-
-  // Custom caption
-  if (caption) {
-    ctx.fillStyle = captionColor || theme.textColor
-    ctx.font = `bold 18px 'Syne', sans-serif`
-    ctx.textAlign = 'center'
-    ctx.fillText(caption, canvasW / 2, footerY + 32)
+  drawStripBackground(ctx, theme, canvasW, canvasH)
+  if (theme.category === 'film') {
+    drawFilmGrain(ctx, canvasW, canvasH)
   }
 
-  // Date stamp (bottom right)
-  const now = new Date()
-  const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-  ctx.fillStyle = theme.textColor
-  ctx.font = `11px 'Space Mono', monospace`
-  ctx.textAlign = 'right'
-  ctx.globalAlpha = 0.4
-  ctx.fillText(dateStr, canvasW - PADDING, canvasH - 8)
-  ctx.globalAlpha = 1
+  const images = await Promise.all(shots.map((s) => loadImage(s.dataUrl)))
+  const light = isLightColor(theme.backgroundColor)
 
-  // Stickers on top (last layer) — scaled & outlined for clear export
+  images.forEach((img, i) => {
+    const { x, y } = getShotPosition(i, layout)
+    const filterCss = getFilterCss(shots[i]?.filterId)
+    drawPhotoFrame(ctx, img, x, y, SHOT_W, SHOT_H, filterCss, theme, light)
+  })
+
+  drawFooter(ctx, theme, canvasW, canvasH, footerH, caption, captionColor)
+
   for (const sticker of stickers) {
     drawStickerOnCanvas(ctx, sticker, canvasW, canvasH)
   }
@@ -154,8 +96,184 @@ export async function composeStrip(options: ComposeOptions): Promise<string> {
   return canvas.toDataURL('image/png', 1.0)
 }
 
+function getShotPosition(index: number, layout: BoothLayout) {
+  if (layout.id === '2x2') {
+    const col = index % 2
+    const row = Math.floor(index / 2)
+    return {
+      x: OUTER_PAD + col * (SHOT_W + GAP),
+      y: OUTER_PAD + row * (SHOT_H + GAP),
+    }
+  }
+  return {
+    x: OUTER_PAD,
+    y: OUTER_PAD + index * (SHOT_H + GAP),
+  }
+}
+
+function getFilterCss(filterId?: string): string {
+  return FILTERS.find((f) => f.id === filterId)?.css ?? 'none'
+}
+
+function drawStripBackground(
+  ctx: CanvasRenderingContext2D,
+  theme: FrameTheme,
+  w: number,
+  h: number
+) {
+  const base = theme.backgroundColor
+  const lighter = mixHex(base, { r: 255, g: 255, b: 255 }, isLightColor(base) ? 0.06 : 0.14)
+  const darker = mixHex(base, { r: 0, g: 0, b: 0 }, isLightColor(base) ? 0.04 : 0.22)
+
+  ctx.fillStyle = base
+  ctx.fillRect(0, 0, w, h)
+
+  const grad = ctx.createLinearGradient(0, 0, w, h)
+  grad.addColorStop(0, lighter)
+  grad.addColorStop(0.45, base)
+  grad.addColorStop(1, darker)
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, w, h)
+
+  const glow = ctx.createRadialGradient(w * 0.5, h * 0.12, 0, w * 0.5, h * 0.35, w * 0.85)
+  glow.addColorStop(0, rgbaFromHex(theme.accentColor, 0.12))
+  glow.addColorStop(1, 'transparent')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, w, h)
+
+  // Bingkai luar lembut
+  roundRectPath(ctx, 12, 12, w - 24, h - 24, 20)
+  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.2)
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+}
+
+function drawPhotoFrame(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  filterCss: string,
+  theme: FrameTheme,
+  lightBg: boolean
+) {
+  ctx.save()
+
+  // Bayangan lembut di bawah foto
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)'
+  ctx.shadowBlur = 28
+  ctx.shadowOffsetY = 10
+  ctx.fillStyle = lightBg ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.35)'
+  roundRectPath(ctx, x, y, w, h, PHOTO_RADIUS)
+  ctx.fill()
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
+
+  // Foto + filter (sebelumnya filter tidak diterapkan di export!)
+  roundRectPath(ctx, x, y, w, h, PHOTO_RADIUS)
+  ctx.clip()
+  ctx.filter = filterCss !== 'none' ? filterCss : 'none'
+  ctx.drawImage(img, x, y, w, h)
+  ctx.filter = 'none'
+
+  // Vignette halus di dalam frame
+  const vig = ctx.createRadialGradient(x + w / 2, y + h / 2, w * 0.2, x + w / 2, y + h / 2, w * 0.72)
+  vig.addColorStop(0, 'transparent')
+  vig.addColorStop(1, lightBg ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.28)')
+  ctx.fillStyle = vig
+  ctx.fillRect(x, y, w, h)
+
+  ctx.restore()
+
+  // Ring aksen tipis (bukan kotak kaku)
+  roundRectPath(ctx, x, y, w, h, PHOTO_RADIUS)
+  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.55)
+  ctx.lineWidth = 2
+  ctx.stroke()
+
+  roundRectPath(ctx, x + 3, y + 3, w - 6, h - 6, PHOTO_RADIUS - 4)
+  ctx.strokeStyle = rgbaFromHex(lightBg ? '#ffffff' : '#ffffff', 0.12)
+  ctx.lineWidth = 1
+  ctx.stroke()
+}
+
+function drawFooter(
+  ctx: CanvasRenderingContext2D,
+  theme: FrameTheme,
+  canvasW: number,
+  canvasH: number,
+  footerH: number,
+  caption?: string,
+  captionColor?: string
+) {
+  const top = canvasH - footerH
+  const pad = OUTER_PAD
+  const panelW = canvasW - pad * 2
+
+  ctx.save()
+
+  roundRectPath(ctx, pad, top + 6, panelW, footerH - 14, 14)
+  ctx.fillStyle = rgbaFromHex(
+    theme.accentColor,
+    isLightColor(theme.backgroundColor) ? 0.06 : 0.1
+  )
+  ctx.fill()
+  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.18)
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  const centerX = canvasW / 2
+  const lineY = top + 22
+
+  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.35)
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(centerX - 48, lineY)
+  ctx.lineTo(centerX + 48, lineY)
+  ctx.stroke()
+
+  ctx.fillStyle = rgbaFromHex(theme.textColor, 0.75)
+  ctx.font = `600 11px ${FONT_DISPLAY}`
+  ctx.textAlign = 'center'
+  const watermark = (theme.watermark || 'SNAPBOOTH').replace(/[✦◈·▷❀]/g, '').trim() || 'SNAPBOOTH'
+  ctx.fillText(watermark.toUpperCase(), centerX, top + 40)
+
+  if (caption) {
+    ctx.fillStyle = captionColor || theme.textColor
+    ctx.font = `700 20px ${FONT_DISPLAY}`
+    ctx.fillText(caption, centerX, top + 68)
+  }
+
+  const now = new Date()
+  const dateStr = now.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+  ctx.font = `500 10px ${FONT_MONO}`
+  ctx.textAlign = 'right'
+  ctx.fillStyle = rgbaFromHex(theme.textColor, 0.35)
+  ctx.fillText(dateStr, canvasW - pad - 4, canvasH - 14)
+
+  ctx.restore()
+}
+
+function drawFilmGrain(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const dots = Math.floor((w * h) / 900)
+  ctx.save()
+  ctx.globalAlpha = 0.045
+  for (let i = 0; i < dots; i++) {
+    ctx.fillStyle = Math.random() > 0.5 ? '#fff' : '#000'
+    ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1)
+  }
+  ctx.restore()
+}
+
 const EMOJI_FONT =
-  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif'
+  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif'
 
 function drawStickerOnCanvas(
   ctx: CanvasRenderingContext2D,
@@ -163,9 +281,7 @@ function drawStickerOnCanvas(
   canvasW: number,
   canvasH: number
 ) {
-  // Sama dengan pratinjau: ukuran mengikuti lebar strip (bukan pengali ekstra)
   const fontSize = Math.max(scaleStickerSize(sticker.size, canvasW), 20)
-
   const px = (sticker.x / 100) * canvasW
   const py = (sticker.y / 100) * canvasH
 
@@ -176,29 +292,46 @@ function drawStickerOnCanvas(
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  // White + dark outline agar terbaca di foto terang/gelap
-  const outline = Math.max(3, fontSize * 0.1)
+  const outline = Math.max(2, fontSize * 0.07)
   ctx.lineJoin = 'round'
-  ctx.miterLimit = 2
-  ctx.lineWidth = outline * 1.4
-  ctx.strokeStyle = 'rgba(255,255,255,0.92)'
+  ctx.lineWidth = outline
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)'
   ctx.strokeText(sticker.emoji, 0, 0)
-  ctx.lineWidth = outline * 0.7
-  ctx.strokeStyle = 'rgba(0,0,0,0.55)'
+  ctx.lineWidth = outline * 0.5
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)'
   ctx.strokeText(sticker.emoji, 0, 0)
 
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'
-  ctx.shadowBlur = fontSize * 0.12
-  ctx.shadowOffsetX = 0
-  ctx.shadowOffsetY = fontSize * 0.05
-  ctx.fillStyle = '#000000'
-  ctx.fillText(sticker.emoji, 0, 0)
+  ctx.shadowColor = 'rgba(0,0,0,0.35)'
+  ctx.shadowBlur = fontSize * 0.1
+  ctx.shadowOffsetY = fontSize * 0.04
+  ctx.fillStyle = '#000'
   ctx.fillText(sticker.emoji, 0, 0)
 
   ctx.restore()
 }
 
-// ─── Helper ───────────────────────────────────────────────────
+function roundRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  const radius = Math.min(r, w / 2, h / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.lineTo(x + w - radius, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
+  ctx.lineTo(x + w, y + h - radius)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h)
+  ctx.lineTo(x + radius, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
+  ctx.lineTo(x, y + radius)
+  ctx.quadraticCurveTo(x, y, x + radius, y)
+  ctx.closePath()
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -208,7 +341,6 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-// ─── Download ─────────────────────────────────────────────────
 export function downloadDataUrl(dataUrl: string, filename = 'snapbooth.png') {
   const a = document.createElement('a')
   a.href = dataUrl
@@ -216,7 +348,6 @@ export function downloadDataUrl(dataUrl: string, filename = 'snapbooth.png') {
   a.click()
 }
 
-// ─── Share ────────────────────────────────────────────────────
 export async function shareImage(dataUrl: string, title = 'My SnapBooth Strip') {
   if (!navigator.share) return false
   try {
@@ -230,7 +361,14 @@ export async function shareImage(dataUrl: string, title = 'My SnapBooth Strip') 
   }
 }
 
-// ─── Session ID generator ─────────────────────────────────────
 export function generateSessionId(): string {
   return `sb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
 }
+
+/** Lebar kanvas vertikal standar — untuk skala stiker */
+export function getVerticalStripCanvasWidth(): number {
+  return SHOT_W + OUTER_PAD * 2
+}
+
+// Re-export ref width alignment
+export { STICKER_REF_STRIP_WIDTH }

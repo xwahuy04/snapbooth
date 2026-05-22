@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Trash2, RotateCw } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { rgbaFromHex } from '@/lib/color-utils'
 import { buildPreviewSlots, getPreviewGridClass } from '@/lib/layout-utils'
 import { scaleStickerSize } from '@/lib/sticker-scale'
 import type { BoothLayout, FrameTheme, PhotoFilter, PhotoShot, Sticker } from '@/types'
@@ -112,10 +113,14 @@ export default function StripPreviewEditor({
       <div
         ref={canvasRef}
         className={cn(
-          'strip-canvas relative mx-auto w-full max-w-md touch-none select-none rounded-2xl p-4 sm:max-w-lg sm:p-5 lg:max-w-xl lg:p-6',
+          'strip-canvas relative mx-auto w-full max-w-md touch-none select-none overflow-hidden rounded-3xl border p-4 shadow-2xl sm:max-w-lg sm:p-5 lg:max-w-xl lg:p-6',
           isDragging && 'cursor-grabbing'
         )}
-        style={{ background: theme.backgroundColor }}
+        style={{
+          background: `linear-gradient(145deg, ${theme.backgroundColor} 0%, ${rgbaFromHex(theme.accentColor, 0.08)} 50%, ${theme.backgroundColor} 100%)`,
+          borderColor: rgbaFromHex(theme.accentColor, 0.25),
+          boxShadow: `0 24px 48px -12px rgba(0,0,0,0.5), 0 0 0 1px ${rgbaFromHex(theme.accentColor, 0.15)}`,
+        }}
         onPointerDown={handleCanvasPointerDown}
         role="application"
         aria-label="Pratinjau strip foto dengan stiker yang bisa diseret"
@@ -124,7 +129,10 @@ export default function StripPreviewEditor({
           {previewSlots.map((shot, i) => (
             <div
               key={shot?.id ?? `slot-${i}`}
-              className="pointer-events-none aspect-[4/3] overflow-hidden rounded-xl border border-border/60 bg-black/15"
+              className="pointer-events-none aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-black/20 shadow-lg ring-1 ring-white/10"
+              style={{
+                boxShadow: '0 12px 28px -8px rgba(0,0,0,0.45)',
+              }}
             >
               {shot ? (
                 <img
@@ -143,7 +151,6 @@ export default function StripPreviewEditor({
           ))}
         </div>
 
-        {/* Sticker layer */}
         {stickers.map((sticker) => {
           const isSelected = sticker.id === selectedStickerId
           const displaySize = scaleStickerSize(sticker.size, canvasWidth)
@@ -169,19 +176,16 @@ export default function StripPreviewEditor({
               onPointerCancel={handleStickerPointerUp}
             >
               <span
-                className={cn(
-                  'block transition-transform',
-                  isSelected && 'scale-110'
-                )}
+                className={cn('block transition-transform', isSelected && 'scale-110')}
                 style={{
                   filter:
-                    'drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 2px 4px rgba(0,0,0,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.35))',
+                    'drop-shadow(0 0 2px rgba(255,255,255,0.9)) drop-shadow(0 3px 6px rgba(0,0,0,0.4))',
                 }}
               >
                 {sticker.emoji}
               </span>
               {isSelected && (
-                <span className="absolute -inset-2 rounded-xl border-2 border-dashed border-accent-light/80 pointer-events-none" />
+                <span className="pointer-events-none absolute -inset-2 rounded-xl border-2 border-dashed border-accent-light/80" />
               )}
             </div>
           )
@@ -189,7 +193,7 @@ export default function StripPreviewEditor({
 
         {stickers.length === 0 && (
           <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center text-[11px] font-medium text-muted/70">
-            Pilih emoji di panel Stiker → lalu seret di sini
+            Pilih emoji stiker lalu seret di pratinjau
           </p>
         )}
       </div>
