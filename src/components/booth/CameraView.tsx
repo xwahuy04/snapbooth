@@ -2,12 +2,12 @@
 
 import { useEffect } from 'react'
 import { RotateCcw, FlipHorizontal, ZapOff } from 'lucide-react'
-import type { FrameTheme, PhotoFilter } from '@/types'
+import { cn } from '@/lib/cn'
+import type { PhotoFilter } from '@/types'
 import { useCamera } from '@/hooks/useCamera'
 import { captureFrameFromVideo } from '@/lib/canvas'
 
 interface CameraViewProps {
-  theme: FrameTheme
   filter: PhotoFilter
   onCapture: (dataUrl: string) => void
   shotsTaken: number
@@ -15,11 +15,16 @@ interface CameraViewProps {
 }
 
 export default function CameraView({
-  theme, filter, onCapture, shotsTaken, shotsNeeded,
+  filter,
+  onCapture,
+  shotsTaken,
+  shotsNeeded,
 }: CameraViewProps) {
   const { videoRef, state, startCamera, switchCamera, startCountdown } = useCamera()
 
-  useEffect(() => { startCamera('user') }, [startCamera])
+  useEffect(() => {
+    startCamera('user')
+  }, [startCamera])
 
   const handleCapture = () => {
     if (!state.isReady || state.isCapturing) return
@@ -39,82 +44,96 @@ export default function CameraView({
   const remaining = shotsNeeded - shotsTaken
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="camera-container scanlines relative" style={{ aspectRatio: '4/3' }}>
-        <div id="camera-flash" className="absolute inset-0 bg-white pointer-events-none z-30 opacity-0" />
-        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"
-          style={{ filter: filter.css !== 'none' ? filter.css : undefined, transform: 'scaleX(-1)' }} />
+    <div className="flex flex-col gap-5">
+      <div className="camera-container scanlines relative aspect-[4/3]">
+        <div id="camera-flash" className="pointer-events-none absolute inset-0 z-30 bg-white opacity-0" />
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="h-full w-full object-cover"
+          style={{ filter: filter.css !== 'none' ? filter.css : undefined, transform: 'scaleX(-1)' }}
+        />
 
         {!state.isReady && !state.error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 z-20">
-            <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mb-4"
-              style={{ borderColor: 'var(--accent-blue)', borderTopColor: 'transparent' }} />
-            <p className="text-sm font-medium" style={{ color: 'var(--accent-blue)' }}>Menghidupkan kamera...</p>
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-900/90">
+            <div className="mb-4 h-10 w-10 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            <p className="text-sm font-medium text-accent-light">Menghidupkan kamera...</p>
           </div>
         )}
 
         {state.error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 z-20 p-6 text-center">
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-900/95 p-6 text-center">
             <ZapOff size={36} className="mb-3 text-red-400" />
-            <p className="text-sm text-white/70 mb-4">{state.error}</p>
-            <button className="btn-primary text-xs" onClick={() => startCamera('user')}>Coba Lagi</button>
+            <p className="mb-4 text-sm text-white/70">{state.error}</p>
+            <button type="button" className="btn-primary text-xs" onClick={() => startCamera('user')}>
+              Coba Lagi
+            </button>
           </div>
         )}
 
         {state.countdown !== null && (
-          <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40 backdrop-blur-sm">
-            <span className="countdown-number font-display font-black text-8xl text-white"
-              style={{ textShadow: '0 0 40px rgba(37,99,235,0.6)' }} key={state.countdown}>
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <span
+              className="countdown-number font-display text-8xl font-black text-white"
+              style={{ textShadow: '0 0 40px rgb(99 102 241 / 0.6)' }}
+              key={state.countdown}
+            >
               {state.countdown}
             </span>
           </div>
         )}
 
-        <div className="absolute top-3 right-3 z-10 text-xs font-semibold px-2.5 py-1 rounded-full"
-          style={{ background: 'var(--accent-blue)', color: '#fff', boxShadow: 'var(--shadow-md)' }}>
+        <div className="absolute right-3 top-3 z-10 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white shadow-md">
           {shotsTaken}/{shotsNeeded}
         </div>
 
         {state.isReady && (
           <>
-            <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 z-10 rounded-tl-sm opacity-50" style={{ borderColor: 'white' }} />
-            <div className="absolute top-3 right-12 w-5 h-5 border-t-2 border-r-2 z-10 rounded-tr-sm opacity-50" style={{ borderColor: 'white' }} />
-            <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 z-10 rounded-bl-sm opacity-50" style={{ borderColor: 'white' }} />
-            <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 z-10 rounded-br-sm opacity-50" style={{ borderColor: 'white' }} />
+            <div className="absolute left-3 top-3 z-10 h-5 w-5 rounded-tl-sm border-l-2 border-t-2 border-white/50" />
+            <div className="absolute right-12 top-3 z-10 h-5 w-5 rounded-tr-sm border-r-2 border-t-2 border-white/50" />
+            <div className="absolute bottom-3 left-3 z-10 h-5 w-5 rounded-bl-sm border-b-2 border-l-2 border-white/50" />
+            <div className="absolute bottom-3 right-3 z-10 h-5 w-5 rounded-br-sm border-b-2 border-r-2 border-white/50" />
           </>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <button className="btn-ghost text-sm" onClick={switchCamera} disabled={!state.isReady}>
+      <div className="flex items-center justify-between gap-4">
+        <button type="button" className="btn-ghost text-sm" onClick={switchCamera} disabled={!state.isReady}>
           <RotateCcw size={16} /> Balik
         </button>
-        <button onClick={handleCapture} disabled={!state.isReady || state.isCapturing || remaining === 0}
-          className="relative w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all disabled:opacity-40 hover:scale-105 active:scale-95"
-          style={{ background: 'var(--accent-blue)', boxShadow: state.isReady && remaining > 0 ? '0 0 0 4px rgba(37,99,235,0.2), var(--shadow-blue-lg)' : 'none' }}
-          aria-label="Ambil foto">
-          <div className="w-14 h-14 rounded-full border-[3px] border-white/40 flex items-center justify-center">
-            {state.isCapturing
-              ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              : <div className="w-8 h-8 rounded-full bg-white/90" />}
+        <button
+          type="button"
+          onClick={handleCapture}
+          disabled={!state.isReady || state.isCapturing || remaining === 0}
+          className={cn(
+            'relative flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full transition-all hover:scale-105 active:scale-95 disabled:opacity-40',
+            state.isReady && remaining > 0 && 'bg-accent shadow-glow-lg ring-4 ring-accent-soft'
+          )}
+          aria-label="Ambil foto"
+        >
+          <div className="flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-white/40">
+            {state.isCapturing ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-white/90" />
+            )}
           </div>
         </button>
-        <button className="btn-ghost text-sm opacity-50" disabled>
+        <button type="button" className="btn-ghost text-sm opacity-50" disabled>
           <FlipHorizontal size={16} /> Mirror
         </button>
       </div>
 
-      {remaining > 0 && (
-        <div className="text-xs text-center font-medium px-4 py-2.5 rounded-lg"
-          style={{ background: 'var(--accent-blue-50)', color: 'var(--accent-blue)', border: '1px solid var(--accent-blue-100)' }}>
+      {remaining > 0 ? (
+        <p className="rounded-xl border border-accent-ring bg-accent-soft px-4 py-3 text-center text-xs font-semibold text-accent-light">
           {remaining} foto lagi untuk dilengkapi
-        </div>
-      )}
-      {remaining === 0 && (
-        <div className="text-xs text-center font-medium px-4 py-2.5 rounded-lg"
-          style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+        </p>
+      ) : (
+        <p className="rounded-xl border border-green-500/30 bg-success-soft px-4 py-3 text-center text-xs font-semibold text-success">
           ✓ Semua foto sudah diambil — lanjut ke editor!
-        </div>
+        </p>
       )}
     </div>
   )

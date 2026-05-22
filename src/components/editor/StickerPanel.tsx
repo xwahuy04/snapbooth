@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { cn } from '@/lib/cn'
 import { STICKER_PACKS } from '@/lib/data'
-import type { FrameTheme } from '@/types'
 
 type PackKey = keyof typeof STICKER_PACKS
 
@@ -15,45 +15,52 @@ const PACK_LABELS: Record<PackKey, string> = {
 }
 
 interface StickerPanelProps {
-  theme: FrameTheme
   onAdd: (emoji: string) => void
+  spacious?: boolean
 }
 
-export default function StickerPanel({ theme, onAdd }: StickerPanelProps) {
+export default function StickerPanel({ onAdd, spacious }: StickerPanelProps) {
   const [activePack, setActivePack] = useState<PackKey>('hearts')
 
   return (
-    <div className="flex flex-col gap-3">
-      <h3 className="section-label text-xs md:text-sm">Stiker</h3>
-
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-        {(Object.keys(STICKER_PACKS) as PackKey[]).map((pack) => (
-          <button
-            key={pack}
-            onClick={() => setActivePack(pack)}
-            className="flex-shrink-0 text-[11px] md:text-xs font-medium px-3 py-1.5 rounded-full transition-all"
-            style={{
-              background: activePack === pack ? 'var(--accent-blue-50)' : 'var(--bg-secondary)',
-              color: activePack === pack ? 'var(--accent-blue)' : 'var(--text-secondary)',
-              border: activePack === pack ? '1px solid var(--accent-blue-100)' : '1px solid var(--border)',
-            }}
-          >
-            {PACK_LABELS[pack]}
-          </button>
-        ))}
+    <div className={cn('flex flex-col', spacious ? 'gap-6' : 'gap-3')}>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {(Object.keys(STICKER_PACKS) as PackKey[]).map((pack) => {
+          const active = activePack === pack
+          return (
+            <button
+              key={pack}
+              type="button"
+              onClick={() => setActivePack(pack)}
+              className={cn(
+                'shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-all sm:text-sm',
+                spacious && 'px-5 py-2.5',
+                active
+                  ? 'border-accent-ring bg-accent-soft text-accent-light'
+                  : 'border-border bg-surface-raised text-muted hover:text-foreground'
+              )}
+            >
+              {PACK_LABELS[pack]}
+            </button>
+          )
+        })}
       </div>
 
-      <div className="grid grid-cols-5 gap-2">
+      <div
+        className={cn(
+          'grid gap-2.5',
+          spacious ? 'grid-cols-5 gap-3 sm:grid-cols-6 sm:gap-4' : 'grid-cols-5 gap-2'
+        )}
+      >
         {STICKER_PACKS[activePack].map((emoji) => (
           <button
             key={emoji}
+            type="button"
             onClick={() => onAdd(emoji)}
-            className="p-2 text-2xl flex items-center justify-center rounded-xl transition-all hover:scale-110 hover:shadow-md active:scale-95"
-            style={{
-              aspectRatio: '1',
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border)',
-            }}
+            className={cn(
+              'flex aspect-square items-center justify-center rounded-2xl border border-border bg-surface-raised transition-all hover:scale-110 hover:border-border-strong hover:bg-surface-hover hover:shadow-md active:scale-95',
+              spacious ? 'text-3xl sm:text-4xl' : 'text-2xl'
+            )}
             aria-label={`Tambah stiker ${emoji}`}
           >
             {emoji}

@@ -5,7 +5,7 @@ import type { PhotoShot, EditorState, BoothStep, BoothLayout, Sticker } from '@/
 import { THEMES, LAYOUTS, FILTERS } from '@/lib/data'
 import { generateSessionId, composeStrip, downloadDataUrl, shareImage } from '@/lib/canvas'
 
-interface UsePhotoBoothReturn {
+export interface UsePhotoBoothReturn {
   step: BoothStep
   setStep: (s: BoothStep) => void
   editor: EditorState

@@ -1,86 +1,64 @@
 'use client'
 
+import { cn } from '@/lib/cn'
 import type { BoothStep } from '@/types'
 
 const STEPS: { id: BoothStep; label: string; number: number }[] = [
-  { id: 'theme',  label: 'Tema',   number: 1 },
-  { id: 'camera', label: 'Foto',   number: 2 },
-  { id: 'editor', label: 'Edit',   number: 3 },
-  { id: 'result', label: 'Hasil',  number: 4 },
+  { id: 'theme', label: 'Tema', number: 1 },
+  { id: 'camera', label: 'Foto', number: 2 },
+  { id: 'editor', label: 'Edit', number: 3 },
+  { id: 'result', label: 'Hasil', number: 4 },
 ]
 
 const ORDER: BoothStep[] = ['theme', 'camera', 'editor', 'result']
 
 interface StepIndicatorProps {
   currentStep: BoothStep
-  accentColor?: string
 }
 
-export default function StepIndicator({
-  currentStep,
-}: StepIndicatorProps) {
+export default function StepIndicator({ currentStep }: StepIndicatorProps) {
   const currentIdx = ORDER.indexOf(currentStep)
 
   return (
-    <div className="flex items-center justify-center gap-0">
+    <nav className="flex items-center justify-center" aria-label="Langkah booth">
       {STEPS.map((step, i) => {
         const done = i < currentIdx
         const active = i === currentIdx
 
         return (
           <div key={step.id} className="flex items-center">
-            {/* Step bubble */}
-            <div
-              className="flex flex-col items-center gap-1"
-              style={{ minWidth: 56 }}
-            >
+            <div className="flex min-w-[52px] flex-col items-center gap-1 sm:min-w-[56px]">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all"
-                style={{
-                  background: active
-                    ? 'var(--accent-blue)'
-                    : done
-                    ? 'var(--accent-blue-50)'
-                    : 'var(--bg-muted)',
-                  border: active
-                    ? '2px solid var(--accent-blue)'
-                    : done
-                    ? '2px solid var(--accent-blue-100)'
-                    : '2px solid var(--border)',
-                  color: active ? '#fff' : done ? 'var(--accent-blue)' : 'var(--text-muted)',
-                  boxShadow: active ? 'var(--shadow-blue)' : 'none',
-                }}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all',
+                  active && 'bg-accent text-white shadow-glow ring-2 ring-accent-ring',
+                  done && !active && 'border border-accent-ring bg-accent-soft text-accent-light',
+                  !active && !done && 'border border-border bg-surface-muted text-subtle'
+                )}
               >
                 {done ? '✓' : step.number}
               </div>
               <span
-                className="text-[10px] font-medium"
-                style={{
-                  color: active
-                    ? 'var(--accent-blue)'
-                    : done
-                    ? 'var(--accent-blue)'
-                    : 'var(--text-muted)',
-                }}
+                className={cn(
+                  'text-[10px] font-semibold',
+                  active || done ? 'text-accent-light' : 'text-subtle'
+                )}
               >
                 {step.label}
               </span>
             </div>
 
-            {/* Connector line */}
             {i < STEPS.length - 1 && (
               <div
-                className="h-0.5 w-6 mb-5 transition-all rounded-full"
-                style={{
-                  background: i < currentIdx
-                    ? 'var(--accent-blue)'
-                    : 'var(--border)',
-                }}
+                className={cn(
+                  'mb-5 h-0.5 w-4 rounded-full sm:w-6',
+                  i < currentIdx ? 'bg-accent' : 'bg-border'
+                )}
               />
             )}
           </div>
         )
       })}
-    </div>
+    </nav>
   )
 }

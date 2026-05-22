@@ -1,10 +1,11 @@
 'use client'
 
+import { cn } from '@/lib/cn'
 import type { FrameTheme } from '@/types'
 
 const COLOR_PRESETS = [
-  '#ffffff', '#2563eb', '#06b6d4', '#eab308', '#22c55e',
-  '#f97316', '#7c3aed', '#111111', '#ef4444', '#ec4899',
+  '#ffffff', '#6366f1', '#06b6d4', '#eab308', '#22c55e',
+  '#f97316', '#a855f7', '#111111', '#ef4444', '#ec4899',
 ]
 
 interface CaptionEditorProps {
@@ -13,51 +14,44 @@ interface CaptionEditorProps {
   theme: FrameTheme
   onChange: (caption: string) => void
   onColorChange: (color: string) => void
+  spacious?: boolean
 }
 
-export default function CaptionEditor({ caption, captionColor, theme, onChange, onColorChange }: CaptionEditorProps) {
+export default function CaptionEditor({
+  caption,
+  captionColor,
+  theme,
+  onChange,
+  onColorChange,
+  spacious,
+}: CaptionEditorProps) {
   return (
-    <div className="flex flex-col gap-3">
-      <h3 className="section-label text-xs md:text-sm">Caption</h3>
-
+    <div className={cn('flex flex-col', spacious ? 'gap-6' : 'gap-3')}>
       <input
         type="text"
         value={caption}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Tambah caption di strip..."
         maxLength={40}
-        className="w-full px-3.5 py-2.5 rounded-lg text-sm outline-none transition-all"
-        style={{
-          background: 'var(--bg-secondary)',
-          border: caption ? '1px solid var(--accent-blue)' : '1px solid var(--border)',
-          color: 'var(--text-primary)',
-          boxShadow: caption ? '0 0 0 3px var(--accent-blue-50)' : 'none',
-        }}
-        onFocus={(e) => {
-          e.target.style.borderColor = 'var(--accent-blue)'
-          e.target.style.boxShadow = '0 0 0 3px var(--accent-blue-50)'
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = caption ? 'var(--accent-blue)' : 'var(--border)'
-          e.target.style.boxShadow = caption ? '0 0 0 3px var(--accent-blue-50)' : 'none'
-        }}
+        className={cn('input-field', spacious && 'py-3.5 text-base sm:py-4')}
       />
 
-      <div className="flex items-center gap-2.5">
-        <span className="text-[11px] md:text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-          Warna:
-        </span>
-        <div className="flex gap-1.5 flex-wrap">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-xs font-semibold text-subtle sm:text-sm">Warna teks</span>
+        <div className="flex flex-wrap gap-2 sm:gap-2.5">
           {COLOR_PRESETS.map((color) => (
             <button
               key={color}
+              type="button"
               onClick={() => onColorChange(color)}
-              className="w-6 h-6 rounded-full transition-all hover:scale-125"
-              style={{
-                background: color,
-                border: captionColor === color ? '2.5px solid var(--accent-blue)' : '2px solid var(--border)',
-                boxShadow: captionColor === color ? '0 0 0 2px var(--accent-blue-50)' : 'var(--shadow-xs)',
-              }}
+              className={cn(
+                'rounded-full transition-all hover:scale-110',
+                spacious ? 'h-8 w-8 sm:h-9 sm:w-9' : 'h-6 w-6',
+                captionColor === color
+                  ? 'ring-2 ring-accent ring-offset-2 ring-offset-surface-card'
+                  : 'border-2 border-border'
+              )}
+              style={{ background: color }}
               aria-label={`Warna ${color}`}
             />
           ))}
@@ -65,22 +59,27 @@ export default function CaptionEditor({ caption, captionColor, theme, onChange, 
             type="color"
             value={captionColor}
             onChange={(e) => onColorChange(e.target.value)}
-            className="w-6 h-6 rounded-full cursor-pointer border-0 p-0"
-            style={{ background: 'transparent' }}
+            className={cn(
+              'cursor-pointer rounded-full border-0 bg-transparent p-0',
+              spacious ? 'h-8 w-8 sm:h-9 sm:w-9' : 'h-6 w-6'
+            )}
             title="Pilih warna kustom"
           />
         </div>
       </div>
 
       {caption && (
-        <p className="font-semibold text-sm md:text-base text-center px-3 py-2 rounded-lg word-break"
+        <p
+          className={cn(
+            'word-break rounded-xl border border-border px-4 py-3 text-center font-semibold shadow-sm',
+            spacious ? 'text-base sm:text-lg sm:py-4' : 'text-sm md:text-base'
+          )}
           style={{
             color: captionColor,
-            background: `${theme.backgroundColor}`,
-            border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-sm)',
+            background: theme.backgroundColor,
             lineHeight: 1.6,
-          }}>
+          }}
+        >
           {caption}
         </p>
       )}

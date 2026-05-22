@@ -1,60 +1,82 @@
 'use client'
 
 import { Check } from 'lucide-react'
+import { cn } from '@/lib/cn'
 import { FILTERS } from '@/lib/data'
-import type { FrameTheme } from '@/types'
 
 interface FilterPanelProps {
   activeFilterId: string
-  theme: FrameTheme
   previewDataUrl?: string
   onSelect: (id: string) => void
+  spacious?: boolean
 }
 
-export default function FilterPanel({ activeFilterId, theme, previewDataUrl, onSelect }: FilterPanelProps) {
+export default function FilterPanel({
+  activeFilterId,
+  previewDataUrl,
+  onSelect,
+  spacious,
+}: FilterPanelProps) {
   return (
-    <div className="flex flex-col gap-3">
-      <h3 className="section-label text-xs md:text-sm">Filter Foto</h3>
-      <div className="grid grid-cols-3 gap-2.5">
-        {FILTERS.map((f) => {
-          const active = f.id === activeFilterId
-          return (
-            <button
-              key={f.id}
-              onClick={() => onSelect(f.id)}
-              className="flex flex-col items-center gap-2 p-2.5 rounded-xl transition-all hover:shadow-md active:scale-[0.98]"
-              style={{
-                background: active ? 'var(--accent-blue-50)' : 'var(--bg-card)',
-                border: active ? '2px solid var(--accent-blue)' : '2px solid var(--border)',
-                boxShadow: active ? 'var(--shadow-blue)' : 'var(--shadow-xs)',
-              }}
+    <div
+      className={cn(
+        'grid gap-3',
+        spacious ? 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 sm:gap-4' : 'grid-cols-3 gap-2.5'
+      )}
+    >
+      {FILTERS.map((f) => {
+        const active = f.id === activeFilterId
+        return (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => onSelect(f.id)}
+            className={cn(
+              'flex flex-col items-center gap-2.5 rounded-2xl p-3 transition-all active:scale-[0.98]',
+              spacious && 'gap-3 p-3.5 sm:p-4',
+              active ? 'option-card-active' : 'option-card'
+            )}
+          >
+            <div
+              className={cn(
+                'relative w-full overflow-hidden rounded-xl bg-slate-200/90',
+                spacious ? 'aspect-[4/3]' : 'aspect-[4/3]'
+              )}
             >
-              <div className="w-full rounded-lg overflow-hidden relative" style={{ aspectRatio: '4/3', background: '#f1f5f9' }}>
-                {previewDataUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previewDataUrl} alt={f.name} className="w-full h-full object-cover"
-                    style={{ filter: f.css !== 'none' ? f.css : undefined }} />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xl"
-                    style={{ filter: f.css !== 'none' ? f.css : undefined }}>
-                    {f.preview}
-                  </div>
-                )}
-                {active && (
-                  <div className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center"
-                    style={{ background: 'var(--accent-blue)', boxShadow: 'var(--shadow-sm)' }}>
-                    <Check size={9} className="text-white" />
-                  </div>
-                )}
-              </div>
-              <span className="text-[11px] md:text-xs font-medium"
-                style={{ color: active ? 'var(--accent-blue)' : 'var(--text-secondary)' }}>
-                {f.name}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+              {previewDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={previewDataUrl}
+                  alt={f.name}
+                  className="h-full w-full object-cover"
+                  style={{ filter: f.css !== 'none' ? f.css : undefined }}
+                />
+              ) : (
+                <div
+                  className="flex h-full w-full items-center justify-center text-2xl"
+                  style={{ filter: f.css !== 'none' ? f.css : undefined }}
+                >
+                  {f.preview}
+                </div>
+              )}
+              {active && (
+                <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent shadow-sm">
+                  <Check size={10} className="text-white" />
+                </div>
+              )}
+            </div>
+            <span
+              className={cn(
+                'font-medium',
+                spacious ? 'text-xs sm:text-sm' : 'text-[11px] md:text-xs',
+                active ? 'text-accent-light' : 'text-muted'
+              )}
+            >
+              {f.name}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }
