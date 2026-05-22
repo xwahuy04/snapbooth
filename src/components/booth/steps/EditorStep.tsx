@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import AdjustmentsPanel from '@/components/editor/AdjustmentsPanel'
+import BackgroundPanel from '@/components/editor/BackgroundPanel'
 import CaptionEditor from '@/components/editor/CaptionEditor'
 import EditorToolTabs, { type EditorTabId } from '@/components/editor/EditorToolTabs'
 import FilterPanel from '@/components/editor/FilterPanel'
@@ -12,11 +13,12 @@ import Panel from '@/components/ui/Panel'
 import StepHeader from '@/components/ui/StepHeader'
 import { buildPhotoFilterCss } from '@/lib/filter-utils'
 import { usePhotoBoothContext } from '@/providers/PhotoBoothProvider'
-import { THEMES } from '@/lib/data'
+import { THEMES, BACKGROUNDS } from '@/lib/data'
 
 export default function EditorStep() {
   const booth = usePhotoBoothContext()
   const theme = THEMES.find((t) => t.id === booth.editor.activeTheme) ?? THEMES[0]
+  const background = BACKGROUNDS.find((b) => b.id === booth.editor.activeBackground)
   const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<EditorTabId>('filter')
 
@@ -57,6 +59,7 @@ export default function EditorStep() {
           shots={booth.editor.shots}
           layout={booth.selectedLayout}
           theme={theme}
+          backgroundValue={background?.value}
           filterCss={previewFilter}
           frameStyle={booth.editor.frameStyle}
           stickers={booth.editor.stickers}
@@ -93,6 +96,13 @@ export default function EditorStep() {
 
         {activeTab === 'frame' && (
           <FrameStylePanel activeStyle={booth.editor.frameStyle} onSelect={booth.setFrameStyle} />
+        )}
+
+        {activeTab === 'background' && (
+          <BackgroundPanel
+            selectedId={booth.editor.activeBackground}
+            onChange={booth.setBackground}
+          />
         )}
 
         {activeTab === 'sticker' && (

@@ -3,6 +3,7 @@ import type { BoothLayout } from '@/types'
 export { THEMES, THEME_CATEGORIES } from '@/lib/themes'
 export { FILTERS } from '@/lib/filters'
 export { FRAME_STYLES } from '@/lib/frame-styles'
+export { BACKGROUNDS, BACKGROUND_CATEGORIES } from '@/lib/backgrounds'
 
 export const LAYOUTS: BoothLayout[] = [
   { id: '1x1', label: '1 Foto', shotCount: 1, description: 'Single portrait shot', icon: '⬜' },

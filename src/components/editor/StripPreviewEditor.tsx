@@ -29,6 +29,7 @@ interface StripPreviewEditorProps {
   shots: PhotoShot[]
   layout: BoothLayout
   theme: FrameTheme
+  backgroundValue?: string
   filterCss: string
   frameStyle: FrameStyleId
   stickers: Sticker[]
@@ -45,6 +46,7 @@ export default function StripPreviewEditor({
   shots,
   layout,
   theme,
+  backgroundValue,
   filterCss,
   frameStyle,
   stickers,
@@ -132,7 +134,8 @@ export default function StripPreviewEditor({
           isDragging && 'cursor-grabbing'
         )}
         style={{
-          background: `linear-gradient(145deg, ${theme.backgroundColor} 0%, ${rgbaFromHex(theme.accentColor, 0.08)} 50%, ${theme.backgroundColor} 100%)`,
+          background: backgroundValue || `linear-gradient(145deg, ${theme.backgroundColor} 0%, ${rgbaFromHex(theme.accentColor, 0.08)} 50%, ${theme.backgroundColor} 100%)`,
+          backgroundSize: backgroundValue?.includes('radial-gradient') || backgroundValue?.includes('repeating-linear') ? '20px 20px' : 'auto',
           borderColor: rgbaFromHex(theme.accentColor, 0.25),
           boxShadow: `0 24px 48px -12px rgba(0,0,0,0.5), 0 0 0 1px ${rgbaFromHex(theme.accentColor, 0.15)}`,
         }}

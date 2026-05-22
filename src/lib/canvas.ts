@@ -56,6 +56,7 @@ interface ComposeOptions {
   shots: PhotoShot[]
   theme: FrameTheme
   layout: BoothLayout
+  backgroundValue?: string
   caption?: string
   captionColor?: string
   captionSize?: CaptionSize
@@ -69,6 +70,7 @@ export async function composeStrip(options: ComposeOptions): Promise<string> {
     shots,
     theme,
     layout,
+    backgroundValue,
     caption,
     captionColor,
     captionSize = 'md',
@@ -94,7 +96,7 @@ export async function composeStrip(options: ComposeOptions): Promise<string> {
   canvas.height = canvasH
   const ctx = canvas.getContext('2d')!
 
-  drawStripBackground(ctx, theme, canvasW, canvasH)
+  drawStripBackground(ctx, theme, canvasW, canvasH, backgroundValue)
   if (theme.category === 'film') {
     drawFilmGrain(ctx, canvasW, canvasH)
   }
@@ -136,22 +138,114 @@ function drawStripBackground(
   ctx: CanvasRenderingContext2D,
   theme: FrameTheme,
   w: number,
-  h: number
+  h: number,
+  backgroundValue?: string
 ) {
-  const base = theme.backgroundColor
-  const lighter = mixHex(base, { r: 255, g: 255, b: 255 }, isLightColor(base) ? 0.06 : 0.14)
-  const darker = mixHex(base, { r: 0, g: 0, b: 0 }, isLightColor(base) ? 0.04 : 0.22)
+  // Use custom background if provided, otherwise use theme background
+  if (backgroundValue) {
+    // Handle solid colors
+    if (backgroundValue.startsWith('#') || backgroundValue.startsWith('rgb')) {
+      ctx.fillStyle = backgroundValue
+      ctx.fillRect(0, 0, w, h)
+    }
+    // Handle linear gradients
+    else if (backgroundValue.includes('linear-gradient')) {
+      // Parse simple linear-gradient format: linear-gradient(135deg, color1 0%, color2 50%, color3 100%)
+      const parts = backgroundValue.match(/linear-gradient\((.*?)\)/)?.[1] || ''
+      const items = parts.split(',').map(s => s.trim())
+      
+      let angle = 135
+      let colorStops = items
+      
+      if (items[0] && !items[0].includes('#') && !items[0].includes('rgb')) {
+        const angleMatch = items[0].match(/(\d+)deg/)
+        if (angleMatch) {
+          angle = parseInt(angleMatch[1], 10)
+          colorStops = items.slice(1)
+        }
+      }
+      
+      // Convert angle to radians and calculate gradient line
+      const rad = (angle * Math.PI) / 180
+      const x1 = w * 0.5 - Math.cos(rad) * Math.sqrt(w * w + h * h) * 0.5
+      const y1 = h * 0.5 - Math.sin(rad) * Math.sqrt(w * w + h * h) * 0.5
+      const x2 = w * 0.5 + Math.cos(rad) * Math.sqrt(w * w + h * h) * 0.5
+      const y2 = h * 0.5 + Math.sin(rad) * Math.sqrt(w * w + h * h) * 0.5
+      
+      const grad = ctx.createLinearGradient(x1, y1, x2, y2)
+      
+      colorStops.forEach(stop => {
+        const match = stop.match(/^(.*?)\s+(\d+)%$/)
+        if (match) {
+          const color = match[1]
+          const pos = parseInt(match[2], 10) / 100
+          grad.addColorStop(pos, color)
+        }
+      })
+      
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, w, h)
+    }
+    // Handle radial gradients (polka dots pattern)
+    else if (backgroundValue.includes('radial-gradient')) {
+      // For patterns, just fill with solid color and draw circles
+      const colors = (backgroundValue.match(/#[0-9a-f]{6}|rgb\([^)]+\)/gi) || []) as string[]
+      if (colors.length >= 1) {
+        const bgColor = colors[colors.length - 1] as string
+        ctx.fillStyle = bgColor // Background color
+        ctx.fillRect(0, 0, w, h)
+        
+        if (colors.length >= 2) {
+          const dotColor = colors[0] as string
+          ctx.fillStyle = dotColor // Dot color
+          const dotSize = 8
+          for (let x = 0; x < w; x += 20) {
+            for (let y = 0; y < h; y += 20) {
+              ctx.beginPath()
+              ctx.arc(x, y, dotSize, 0, Math.PI * 2)
+              ctx.fill()
+            }
+          }
+        }
+      }
+    }
+    // Handle repeating patterns
+    else if (backgroundValue.includes('repeating-linear')) {
+      const colors = (backgroundValue.match(/#[0-9a-f]{6}|rgb\([^)]+\)/gi) || []) as string[]
+      if (colors.length > 0) {
+        ctx.fillStyle = colors[colors.length - 1] as string
+        ctx.fillRect(0, 0, w, h)
+        
+        // Draw diagonal stripes
+        ctx.strokeStyle = (colors[0] as string) || '#ccc'
+        ctx.lineWidth = 2
+        const step = 20
+        for (let i = -h; i < w; i += step) {
+          ctx.beginPath()
+          ctx.moveTo(i, 0)
+          ctx.lineTo(i + h, h)
+          ctx.stroke()
+        }
+      }
+    }
+  } else {
+    // Default theme background
+    const base = theme.backgroundColor
+    const lighter = mixHex(base, { r: 255, g: 255, b: 255 }, isLightColor(base) ? 0.06 : 0.14)
+    const darker = mixHex(base, { r: 0, g: 0, b: 0 }, isLightColor(base) ? 0.04 : 0.22)
 
-  ctx.fillStyle = base
-  ctx.fillRect(0, 0, w, h)
+    ctx.fillStyle = base
+    ctx.fillRect(0, 0, w, h)
 
-  const grad = ctx.createLinearGradient(0, 0, w, h)
-  grad.addColorStop(0, lighter)
-  grad.addColorStop(0.45, base)
-  grad.addColorStop(1, darker)
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, w, h)
+    const grad = ctx.createLinearGradient(0, 0, w, h)
+    grad.addColorStop(0, lighter)
+    grad.addColorStop(0.45, base)
+    grad.addColorStop(1, darker)
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, w, h)
+  }
 
+  // Add accent glow (always, regardless of background)
   const glow = ctx.createRadialGradient(w * 0.5, h * 0.12, 0, w * 0.5, h * 0.35, w * 0.85)
   glow.addColorStop(0, rgbaFromHex(theme.accentColor, 0.12))
   glow.addColorStop(1, 'transparent')

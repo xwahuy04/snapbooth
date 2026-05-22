@@ -63,6 +63,20 @@ export interface PhotoFilter {
   preview: string       // emoji / color hint
 }
 
+// ─── Background ───────────────────────────────────────────────
+export interface StripBackground {
+  id: string
+  name: string
+  description: string
+  type: 'solid' | 'gradient' | 'pattern'
+  value: string                // CSS color, gradient, or pattern
+  previewColor?: string         // For solid backgrounds
+  category: BackgroundCategory
+  emoji?: string
+}
+
+export type BackgroundCategory = 'aesthetic' | 'gradient' | 'pattern' | 'vibrant'
+
 // ─── Sticker ──────────────────────────────────────────────────
 export interface Sticker {
   id: string
@@ -84,6 +98,7 @@ export interface EditorState {
   shots: PhotoShot[]
   activeFilter: string
   activeTheme: string
+  activeBackground: string
   stickers: Sticker[]
   caption: string
   captionColor: string

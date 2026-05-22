@@ -12,7 +12,7 @@ import type {
   CaptionSize,
 } from '@/types'
 import { DEFAULT_ADJUSTMENTS } from '@/types'
-import { THEMES, LAYOUTS, FILTERS } from '@/lib/data'
+import { THEMES, LAYOUTS, FILTERS, BACKGROUNDS } from '@/lib/data'
 import { generateSessionId, composeStrip, downloadDataUrl, shareImage } from '@/lib/canvas'
 
 export interface UsePhotoBoothReturn {
@@ -29,6 +29,7 @@ export interface UsePhotoBoothReturn {
   setLayout: (l: BoothLayout) => void
   setTheme: (id: string) => void
   setFilter: (id: string) => void
+  setBackground: (id: string) => void
   setCaption: (c: string) => void
   setCaptionColor: (c: string) => void
   setAdjustments: (a: Partial<EditorAdjustments>) => void
@@ -57,6 +58,7 @@ const DEFAULT_EDITOR: EditorState = {
   shots: [],
   activeFilter: 'none',
   activeTheme: 'midnight',
+  activeBackground: 'cream',
   stickers: [],
   caption: '',
   captionColor: '#ffffff',
@@ -87,6 +89,7 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
   }, [])
 
   const setFilter = useCallback((id: string) => setEditor((e) => ({ ...e, activeFilter: id })), [])
+  const setBackground = useCallback((id: string) => setEditor((e) => ({ ...e, activeBackground: id })), [])
   const setCaption = useCallback((caption: string) => setEditor((e) => ({ ...e, caption })), [])
   const setCaptionColor = useCallback((captionColor: string) => setEditor((e) => ({ ...e, captionColor })), [])
 
@@ -172,6 +175,7 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
   const buildStrip = useCallback(async () => {
     const theme = THEMES.find((t) => t.id === editor.activeTheme) ?? THEMES[0]
     const filter = FILTERS.find((f) => f.id === editor.activeFilter) ?? FILTERS[0]
+    const background = BACKGROUNDS.find((b) => b.id === editor.activeBackground)
     const shots = editor.shots.map((s) => ({ ...s, filterId: filter.id }))
 
     setIsComposing(true)
@@ -181,6 +185,7 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
         shots,
         theme,
         layout: selectedLayout,
+        backgroundValue: background?.value,
         caption: editor.caption,
         captionColor: editor.captionColor,
         captionSize: editor.captionSize,
@@ -244,6 +249,7 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
     setLayout,
     setTheme,
     setFilter,
+    setBackground,
     setCaption,
     setCaptionColor,
     setAdjustments,

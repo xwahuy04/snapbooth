@@ -2,12 +2,13 @@
 
 import { cn } from '@/lib/cn'
 
-export type EditorTabId = 'filter' | 'adjust' | 'frame' | 'sticker' | 'text'
+export type EditorTabId = 'filter' | 'adjust' | 'frame' | 'background' | 'sticker' | 'text'
 
 const TABS: { id: EditorTabId; label: string; emoji: string }[] = [
   { id: 'filter', label: 'Filter', emoji: '🎨' },
   { id: 'adjust', label: 'Atur', emoji: '☀️' },
   { id: 'frame', label: 'Bingkai', emoji: '🖼️' },
+  { id: 'background', label: 'Latar', emoji: '🎭' },
   { id: 'sticker', label: 'Stiker', emoji: '✨' },
   { id: 'text', label: 'Teks', emoji: '✍️' },
 ]
@@ -19,7 +20,7 @@ interface EditorToolTabsProps {
 
 export default function EditorToolTabs({ active, onChange }: EditorToolTabsProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+    <div className="flex border-b border-border overflow-x-auto scrollbar-thin">
       {TABS.map((tab) => (
         <button
           key={tab.id}
