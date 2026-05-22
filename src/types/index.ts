@@ -32,7 +32,17 @@ export interface FrameTheme {
   emoji?: string             // category icon
 }
 
-export type ThemeCategory = 'minimal' | 'retro' | 'neon' | 'cute' | 'film'
+export type ThemeCategory = 'minimal' | 'retro' | 'neon' | 'cute' | 'film' | 'party' | 'elegant'
+
+export type FrameStyleId = 'soft' | 'polaroid' | 'minimal' | 'classic'
+
+export type CaptionSize = 'sm' | 'md' | 'lg'
+
+export interface EditorAdjustments {
+  brightness: number
+  contrast: number
+  saturation: number
+}
 
 // ─── Layout ───────────────────────────────────────────────────
 export interface BoothLayout {
@@ -64,6 +74,12 @@ export interface Sticker {
 }
 
 // ─── Editor State ─────────────────────────────────────────────
+export const DEFAULT_ADJUSTMENTS: EditorAdjustments = {
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+}
+
 export interface EditorState {
   shots: PhotoShot[]
   activeFilter: string
@@ -71,6 +87,9 @@ export interface EditorState {
   stickers: Sticker[]
   caption: string
   captionColor: string
+  adjustments: EditorAdjustments
+  frameStyle: FrameStyleId
+  captionSize: CaptionSize
 }
 
 // ─── Camera ───────────────────────────────────────────────────

@@ -15,8 +15,8 @@ export interface HomeThemeChip {
 
 export const HOME_FEATURES: HomeFeature[] = [
   { icon: Camera, title: 'Live Camera', desc: 'Langsung dari kamera perangkatmu dengan auto mirror effect' },
-  { icon: Palette, title: '8+ Tema Frame', desc: 'Midnight, Sakura, Film 35mm, Retro 90s, dan tema aesthetic lainnya' },
-  { icon: Sparkles, title: 'Filter & Stiker', desc: '9 filter foto eksklusif dan puluhan stiker ekspresif' },
+  { icon: Palette, title: '20 Tema Frame', desc: 'Neon, film, elegan, party — filter per kategori' },
+  { icon: Sparkles, title: 'Studio Edit Lengkap', desc: '16 filter, atur cahaya, 4 gaya bingkai, stiker & caption' },
   { icon: ImageIcon, title: 'Photo Strip', desc: 'Layout strip vertikal klasik atau grid modern 2×2' },
   { icon: Download, title: 'Download Gratis', desc: 'Ekspor hasil foto berkualitas tinggi secara instan dalam format PNG' },
   { icon: Smartphone, title: 'Mobile Friendly', desc: 'Didesain optimal untuk smartphone, tablet, maupun laptop' },

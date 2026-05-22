@@ -16,7 +16,7 @@ export default function ThemeStep() {
       <div className="flex flex-col gap-8 lg:col-span-7">
         <StepHeader
           title="Pilih Gaya Foto"
-          description="Tema warna dan susunan layout diterapkan ke seluruh lembar hasil foto."
+          description="20 tema aesthetic — filter per kategori. Pilih layout strip di bawah."
         />
 
         <div className="panel-inset flex flex-col gap-10 p-6 sm:p-8">

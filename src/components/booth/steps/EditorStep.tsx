@@ -1,24 +1,31 @@
 'use client'
 
 import { useState } from 'react'
+import AdjustmentsPanel from '@/components/editor/AdjustmentsPanel'
 import CaptionEditor from '@/components/editor/CaptionEditor'
+import EditorToolTabs, { type EditorTabId } from '@/components/editor/EditorToolTabs'
 import FilterPanel from '@/components/editor/FilterPanel'
+import FrameStylePanel from '@/components/editor/FrameStylePanel'
 import StickerPanel from '@/components/editor/StickerPanel'
 import StripPreviewEditor from '@/components/editor/StripPreviewEditor'
 import Panel from '@/components/ui/Panel'
 import StepHeader from '@/components/ui/StepHeader'
+import { buildPhotoFilterCss } from '@/lib/filter-utils'
 import { usePhotoBoothContext } from '@/providers/PhotoBoothProvider'
-import { FILTERS, THEMES } from '@/lib/data'
+import { THEMES } from '@/lib/data'
 
 export default function EditorStep() {
   const booth = usePhotoBoothContext()
   const theme = THEMES.find((t) => t.id === booth.editor.activeTheme) ?? THEMES[0]
-  const filter = FILTERS.find((f) => f.id === booth.editor.activeFilter) ?? FILTERS[0]
   const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<EditorTabId>('filter')
+
+  const previewFilter = buildPhotoFilterCss(booth.editor.activeFilter, booth.editor.adjustments)
 
   const handleAddSticker = (emoji: string) => {
     const id = booth.addSticker(emoji)
     setSelectedStickerId(id)
+    setActiveTab('sticker')
   }
 
   const handleRemoveSticker = (id: string) => {
@@ -27,20 +34,17 @@ export default function EditorStep() {
   }
 
   return (
-    <div className="flex w-full animate-fade-in flex-col gap-8 lg:gap-12">
+    <div className="flex w-full animate-fade-in flex-col gap-8 lg:gap-10">
       <StepHeader
-        title="Edit Strip"
-        description="Atur filter & caption, tambah stiker lalu seret di pratinjau. Hasil akhir menyertakan semua stiker."
+        title="Studio Edit"
+        description="20 tema · 16 filter · atur cahaya, bingkai, stiker & teks. Semua langsung terlihat di kanvas."
       />
 
-      {/* Kanvas utama — lebar penuh */}
       <section className="panel panel-spacious">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="section-label">Kanvas Strip</p>
-            <p className="mt-1 text-sm text-muted">
-              Ketuk emoji stiker, lalu <strong className="text-foreground">seret</strong> di pratinjau untuk menempatkan
-            </p>
+            <p className="mt-1 text-sm text-muted">Hasil export mengikuti pengaturan di bawah</p>
           </div>
           {booth.editor.stickers.length > 0 && (
             <span className="rounded-full border border-accent-ring bg-accent-soft px-3 py-1 text-xs font-bold text-accent-light">
@@ -53,7 +57,8 @@ export default function EditorStep() {
           shots={booth.editor.shots}
           layout={booth.selectedLayout}
           theme={theme}
-          filter={filter}
+          filterCss={previewFilter}
+          frameStyle={booth.editor.frameStyle}
           stickers={booth.editor.stickers}
           selectedStickerId={selectedStickerId}
           onSelectSticker={setSelectedStickerId}
@@ -65,38 +70,55 @@ export default function EditorStep() {
         />
       </section>
 
-      {/* Alat edit — 3 kolom di layar besar */}
-      <div className="grid grid-cols-1 gap-6 pb-32 md:gap-8 xl:grid-cols-3">
-        <Panel spacious title="Filter Foto" description="Gaya warna untuk seluruh strip">
+      <div className="panel panel-spacious flex flex-col gap-6 pb-32">
+        <EditorToolTabs active={activeTab} onChange={setActiveTab} />
+
+        {activeTab === 'filter' && (
           <FilterPanel
             activeFilterId={booth.editor.activeFilter}
             previewDataUrl={booth.editor.shots[0]?.dataUrl}
+            adjustments={booth.editor.adjustments}
             onSelect={booth.setFilter}
             spacious
           />
-        </Panel>
+        )}
 
-        <Panel spacious title="Stiker" description="Ketuk emoji — muncul di kanvas, seret untuk atur posisi">
+        {activeTab === 'adjust' && (
+          <AdjustmentsPanel
+            adjustments={booth.editor.adjustments}
+            onChange={booth.setAdjustments}
+            onReset={booth.resetAdjustments}
+          />
+        )}
+
+        {activeTab === 'frame' && (
+          <FrameStylePanel activeStyle={booth.editor.frameStyle} onSelect={booth.setFrameStyle} />
+        )}
+
+        {activeTab === 'sticker' && (
           <StickerPanel
             stickers={booth.editor.stickers}
             selectedStickerId={selectedStickerId}
             onAdd={handleAddSticker}
             onSelect={setSelectedStickerId}
             onRemove={handleRemoveSticker}
+            onClearAll={booth.clearStickers}
             spacious
           />
-        </Panel>
+        )}
 
-        <Panel spacious title="Caption" description="Teks di bagian bawah strip (maks. 40 karakter)">
+        {activeTab === 'text' && (
           <CaptionEditor
             caption={booth.editor.caption}
             captionColor={booth.editor.captionColor}
+            captionSize={booth.editor.captionSize}
             theme={theme}
             onChange={booth.setCaption}
             onColorChange={booth.setCaptionColor}
+            onSizeChange={booth.setCaptionSize}
             spacious
           />
-        </Panel>
+        )}
       </div>
     </div>
   )

@@ -1,7 +1,17 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import type { PhotoShot, EditorState, BoothStep, BoothLayout, Sticker } from '@/types'
+import type {
+  PhotoShot,
+  EditorState,
+  BoothStep,
+  BoothLayout,
+  Sticker,
+  EditorAdjustments,
+  FrameStyleId,
+  CaptionSize,
+} from '@/types'
+import { DEFAULT_ADJUSTMENTS } from '@/types'
 import { THEMES, LAYOUTS, FILTERS } from '@/lib/data'
 import { generateSessionId, composeStrip, downloadDataUrl, shareImage } from '@/lib/canvas'
 
@@ -21,10 +31,15 @@ export interface UsePhotoBoothReturn {
   setFilter: (id: string) => void
   setCaption: (c: string) => void
   setCaptionColor: (c: string) => void
+  setAdjustments: (a: Partial<EditorAdjustments>) => void
+  resetAdjustments: () => void
+  setFrameStyle: (s: FrameStyleId) => void
+  setCaptionSize: (s: CaptionSize) => void
   addShot: (dataUrl: string) => void
   removeShot: (id: string) => void
   addSticker: (emoji: string, x?: number, y?: number) => string
   removeSticker: (id: string) => void
+  clearStickers: () => void
   moveSticker: (id: string, x: number, y: number) => void
   resizeSticker: (id: string, size: number) => void
   rotateSticker: (id: string, rotation: number) => void
@@ -45,6 +60,9 @@ const DEFAULT_EDITOR: EditorState = {
   stickers: [],
   caption: '',
   captionColor: '#ffffff',
+  adjustments: { ...DEFAULT_ADJUSTMENTS },
+  frameStyle: 'soft',
+  captionSize: 'md',
 }
 
 export function usePhotoBooth(): UsePhotoBoothReturn {
@@ -58,10 +76,38 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [sessionId] = useState(generateSessionId)
 
-  const setTheme = useCallback((id: string) => setEditor((e) => ({ ...e, activeTheme: id })), [])
+  const setTheme = useCallback((id: string) => {
+    const theme = THEMES.find((t) => t.id === id)
+    setEditor((e) => ({
+      ...e,
+      activeTheme: id,
+      captionColor: theme?.textColor ?? e.captionColor,
+      frameStyle: id === 'polaroid' ? 'polaroid' : e.frameStyle,
+    }))
+  }, [])
+
   const setFilter = useCallback((id: string) => setEditor((e) => ({ ...e, activeFilter: id })), [])
   const setCaption = useCallback((caption: string) => setEditor((e) => ({ ...e, caption })), [])
   const setCaptionColor = useCallback((captionColor: string) => setEditor((e) => ({ ...e, captionColor })), [])
+
+  const setAdjustments = useCallback((partial: Partial<EditorAdjustments>) => {
+    setEditor((e) => ({
+      ...e,
+      adjustments: { ...e.adjustments, ...partial },
+    }))
+  }, [])
+
+  const resetAdjustments = useCallback(() => {
+    setEditor((e) => ({ ...e, adjustments: { ...DEFAULT_ADJUSTMENTS } }))
+  }, [])
+
+  const setFrameStyle = useCallback((frameStyle: FrameStyleId) => {
+    setEditor((e) => ({ ...e, frameStyle }))
+  }, [])
+
+  const setCaptionSize = useCallback((captionSize: CaptionSize) => {
+    setEditor((e) => ({ ...e, captionSize }))
+  }, [])
 
   const setLayout = useCallback((layout: BoothLayout) => {
     setSelectedLayout(layout)
@@ -101,6 +147,10 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
     setEditor((e) => ({ ...e, stickers: e.stickers.filter((s) => s.id !== id) }))
   }, [])
 
+  const clearStickers = useCallback(() => {
+    setEditor((e) => ({ ...e, stickers: [] }))
+  }, [])
+
   const moveSticker = useCallback((id: string, x: number, y: number) => {
     setEditor((e) => ({ ...e, stickers: e.stickers.map((s) => (s.id === id ? { ...s, x, y } : s)) }))
   }, [])
@@ -133,12 +183,14 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
         layout: selectedLayout,
         caption: editor.caption,
         captionColor: editor.captionColor,
+        captionSize: editor.captionSize,
         stickers: editor.stickers,
+        adjustments: editor.adjustments,
+        frameStyle: editor.frameStyle,
       })
       setStripDataUrl(url)
       setStep('result')
 
-      // Upload to get share URL
       setIsUploading(true)
       try {
         const res = await fetch('/api/upload', {
@@ -179,16 +231,36 @@ export function usePhotoBooth(): UsePhotoBoothReturn {
   }, [])
 
   return {
-    step, setStep,
-    editor, selectedLayout,
-    stripDataUrl, isComposing,
-    isUploading, uploadError, shareUrl,
+    step,
+    setStep,
+    editor,
+    selectedLayout,
+    stripDataUrl,
+    isComposing,
+    isUploading,
+    uploadError,
+    shareUrl,
     sessionId,
-    setLayout, setTheme, setFilter,
-    setCaption, setCaptionColor,
-    addShot, removeShot,
-    addSticker, removeSticker, moveSticker, resizeSticker, rotateSticker,
-    buildStrip, downloadStrip, shareStrip,
+    setLayout,
+    setTheme,
+    setFilter,
+    setCaption,
+    setCaptionColor,
+    setAdjustments,
+    resetAdjustments,
+    setFrameStyle,
+    setCaptionSize,
+    addShot,
+    removeShot,
+    addSticker,
+    removeSticker,
+    clearStickers,
+    moveSticker,
+    resizeSticker,
+    rotateSticker,
+    buildStrip,
+    downloadStrip,
+    shareStrip,
     resetSession,
   }
 }

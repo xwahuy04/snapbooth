@@ -1,5 +1,13 @@
-import type { PhotoShot, FrameTheme, BoothLayout, Sticker } from '@/types'
-import { FILTERS } from '@/lib/data'
+import type {
+  PhotoShot,
+  FrameTheme,
+  BoothLayout,
+  Sticker,
+  EditorAdjustments,
+  FrameStyleId,
+  CaptionSize,
+} from '@/types'
+import { buildPhotoFilterCss } from '@/lib/filter-utils'
 import { isLightColor, mixHex, rgbaFromHex } from '@/lib/color-utils'
 import { scaleStickerSize, STICKER_REF_STRIP_WIDTH } from '@/lib/sticker-scale'
 
@@ -50,11 +58,24 @@ interface ComposeOptions {
   layout: BoothLayout
   caption?: string
   captionColor?: string
+  captionSize?: CaptionSize
   stickers?: Sticker[]
+  adjustments?: EditorAdjustments
+  frameStyle?: FrameStyleId
 }
 
 export async function composeStrip(options: ComposeOptions): Promise<string> {
-  const { shots, theme, layout, caption, captionColor, stickers = [] } = options
+  const {
+    shots,
+    theme,
+    layout,
+    caption,
+    captionColor,
+    captionSize = 'md',
+    stickers = [],
+    adjustments,
+    frameStyle = 'soft',
+  } = options
 
   const footerH = caption ? 88 : 64
   let canvasW: number
@@ -83,11 +104,11 @@ export async function composeStrip(options: ComposeOptions): Promise<string> {
 
   images.forEach((img, i) => {
     const { x, y } = getShotPosition(i, layout)
-    const filterCss = getFilterCss(shots[i]?.filterId)
-    drawPhotoFrame(ctx, img, x, y, SHOT_W, SHOT_H, filterCss, theme, light)
+    const filterCss = buildPhotoFilterCss(shots[i]?.filterId ?? 'none', adjustments)
+    drawPhotoFrame(ctx, img, x, y, SHOT_W, SHOT_H, filterCss, theme, light, frameStyle, i)
   })
 
-  drawFooter(ctx, theme, canvasW, canvasH, footerH, caption, captionColor)
+  drawFooter(ctx, theme, canvasW, canvasH, footerH, caption, captionColor, captionSize)
 
   for (const sticker of stickers) {
     drawStickerOnCanvas(ctx, sticker, canvasW, canvasH)
@@ -109,10 +130,6 @@ function getShotPosition(index: number, layout: BoothLayout) {
     x: OUTER_PAD,
     y: OUTER_PAD + index * (SHOT_H + GAP),
   }
-}
-
-function getFilterCss(filterId?: string): string {
-  return FILTERS.find((f) => f.id === filterId)?.css ?? 'none'
 }
 
 function drawStripBackground(
@@ -157,48 +174,191 @@ function drawPhotoFrame(
   h: number,
   filterCss: string,
   theme: FrameTheme,
+  lightBg: boolean,
+  frameStyle: FrameStyleId,
+  index: number
+) {
+  const tilt = frameStyle === 'polaroid' ? ((index % 2 === 0 ? -1.2 : 1.2) * Math.PI) / 180 : 0
+  const cx = x + w / 2
+  const cy = y + h / 2
+
+  ctx.save()
+  ctx.translate(cx, cy)
+  ctx.rotate(tilt)
+  ctx.translate(-cx, -cy)
+
+  if (frameStyle === 'polaroid') {
+    drawPolaroidFrame(ctx, img, x, y, w, h, filterCss, theme, lightBg)
+  } else if (frameStyle === 'minimal') {
+    drawMinimalFrame(ctx, img, x, y, w, h, filterCss, theme, lightBg)
+  } else if (frameStyle === 'classic') {
+    drawClassicFrame(ctx, img, x, y, w, h, filterCss, theme, lightBg)
+  } else {
+    drawSoftFrame(ctx, img, x, y, w, h, filterCss, theme, lightBg)
+  }
+
+  ctx.restore()
+}
+
+function drawPolaroidFrame(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  filterCss: string,
+  theme: FrameTheme,
   lightBg: boolean
 ) {
-  ctx.save()
+  const bottomPad = 44
+  const pad = 10
+  const fw = w + pad * 2
+  const fh = h + bottomPad + pad
 
-  // Bayangan lembut di bawah foto
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)'
-  ctx.shadowBlur = 28
-  ctx.shadowOffsetY = 10
-  ctx.fillStyle = lightBg ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.35)'
+  ctx.shadowColor = 'rgba(0,0,0,0.35)'
+  ctx.shadowBlur = 22
+  ctx.shadowOffsetY = 8
+  ctx.fillStyle = '#fafaf8'
+  roundRectPath(ctx, x - pad, y - pad, fw, fh, 10)
+  ctx.fill()
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
+
+  const imgH = h - 4
+  roundRectPath(ctx, x, y, w, imgH, 8)
+  ctx.save()
+  ctx.clip()
+  ctx.filter = filterCss !== 'none' ? filterCss : 'none'
+  ctx.drawImage(img, x, y, w, imgH)
+  ctx.filter = 'none'
+  applyInnerVignette(ctx, x, y, w, imgH, lightBg)
+  ctx.restore()
+
+  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.2)
+  ctx.lineWidth = 1
+  roundRectPath(ctx, x - pad, y - pad, fw, fh, 10)
+  ctx.stroke()
+}
+
+function drawSoftFrame(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  filterCss: string,
+  theme: FrameTheme,
+  lightBg: boolean
+) {
+  ctx.shadowColor = 'rgba(0,0,0,0.4)'
+  ctx.shadowBlur = 26
+  ctx.shadowOffsetY = 9
+  ctx.fillStyle = lightBg ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.3)'
   roundRectPath(ctx, x, y, w, h, PHOTO_RADIUS)
   ctx.fill()
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
   ctx.shadowOffsetY = 0
 
-  // Foto + filter (sebelumnya filter tidak diterapkan di export!)
+  drawClippedPhoto(ctx, img, x, y, w, h, filterCss, PHOTO_RADIUS, lightBg)
+
   roundRectPath(ctx, x, y, w, h, PHOTO_RADIUS)
+  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.45)
+  ctx.lineWidth = 2
+  ctx.stroke()
+}
+
+function drawMinimalFrame(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  filterCss: string,
+  theme: FrameTheme,
+  lightBg: boolean
+) {
+  drawClippedPhoto(ctx, img, x, y, w, h, filterCss, 14, lightBg)
+  roundRectPath(ctx, x, y, w, h, 14)
+  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.35)
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+}
+
+function drawClassicFrame(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  filterCss: string,
+  theme: FrameTheme,
+  lightBg: boolean
+) {
+  ctx.shadowColor = 'rgba(0,0,0,0.38)'
+  ctx.shadowBlur = 20
+  ctx.shadowOffsetY = 7
+  ctx.fillStyle = rgbaFromHex(theme.accentColor, 0.08)
+  roundRectPath(ctx, x - 4, y - 4, w + 8, h + 8, PHOTO_RADIUS + 2)
+  ctx.fill()
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
+
+  drawClippedPhoto(ctx, img, x, y, w, h, filterCss, PHOTO_RADIUS - 2, lightBg)
+
+  roundRectPath(ctx, x, y, w, h, PHOTO_RADIUS)
+  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.7)
+  ctx.lineWidth = 3
+  ctx.stroke()
+  roundRectPath(ctx, x + 5, y + 5, w - 10, h - 10, PHOTO_RADIUS - 6)
+  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.25)
+  ctx.lineWidth = 1
+  ctx.stroke()
+}
+
+function drawClippedPhoto(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  filterCss: string,
+  radius: number,
+  lightBg: boolean
+) {
+  roundRectPath(ctx, x, y, w, h, radius)
+  ctx.save()
   ctx.clip()
   ctx.filter = filterCss !== 'none' ? filterCss : 'none'
   ctx.drawImage(img, x, y, w, h)
   ctx.filter = 'none'
+  applyInnerVignette(ctx, x, y, w, h, lightBg)
+  ctx.restore()
+}
 
-  // Vignette halus di dalam frame
-  const vig = ctx.createRadialGradient(x + w / 2, y + h / 2, w * 0.2, x + w / 2, y + h / 2, w * 0.72)
+function applyInnerVignette(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  lightBg: boolean
+) {
+  const vig = ctx.createRadialGradient(x + w / 2, y + h / 2, w * 0.15, x + w / 2, y + h / 2, w * 0.75)
   vig.addColorStop(0, 'transparent')
-  vig.addColorStop(1, lightBg ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.28)')
+  vig.addColorStop(1, lightBg ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.22)')
   ctx.fillStyle = vig
   ctx.fillRect(x, y, w, h)
-
-  ctx.restore()
-
-  // Ring aksen tipis (bukan kotak kaku)
-  roundRectPath(ctx, x, y, w, h, PHOTO_RADIUS)
-  ctx.strokeStyle = rgbaFromHex(theme.accentColor, 0.55)
-  ctx.lineWidth = 2
-  ctx.stroke()
-
-  roundRectPath(ctx, x + 3, y + 3, w - 6, h - 6, PHOTO_RADIUS - 4)
-  ctx.strokeStyle = rgbaFromHex(lightBg ? '#ffffff' : '#ffffff', 0.12)
-  ctx.lineWidth = 1
-  ctx.stroke()
 }
+
+const CAPTION_FONT: Record<CaptionSize, number> = { sm: 16, md: 22, lg: 28 }
 
 function drawFooter(
   ctx: CanvasRenderingContext2D,
@@ -207,7 +367,8 @@ function drawFooter(
   canvasH: number,
   footerH: number,
   caption?: string,
-  captionColor?: string
+  captionColor?: string,
+  captionSize: CaptionSize = 'md'
 ) {
   const top = canvasH - footerH
   const pad = OUTER_PAD
@@ -243,8 +404,8 @@ function drawFooter(
 
   if (caption) {
     ctx.fillStyle = captionColor || theme.textColor
-    ctx.font = `700 20px ${FONT_DISPLAY}`
-    ctx.fillText(caption, centerX, top + 68)
+    ctx.font = `700 ${CAPTION_FONT[captionSize]}px ${FONT_DISPLAY}`
+    ctx.fillText(caption, centerX, top + (captionSize === 'lg' ? 72 : captionSize === 'sm' ? 62 : 68))
   }
 
   const now = new Date()

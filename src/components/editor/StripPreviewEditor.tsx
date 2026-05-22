@@ -6,17 +6,31 @@ import { cn } from '@/lib/cn'
 import { rgbaFromHex } from '@/lib/color-utils'
 import { buildPreviewSlots, getPreviewGridClass } from '@/lib/layout-utils'
 import { scaleStickerSize } from '@/lib/sticker-scale'
-import type { BoothLayout, FrameTheme, PhotoFilter, PhotoShot, Sticker } from '@/types'
+import type { BoothLayout, FrameTheme, FrameStyleId, PhotoShot, Sticker } from '@/types'
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
+}
+
+function photoSlotClass(frameStyle: FrameStyleId): string {
+  switch (frameStyle) {
+    case 'polaroid':
+      return 'rounded-lg bg-[#fafaf8] px-2 pb-9 pt-2 shadow-md ring-1 ring-black/10'
+    case 'minimal':
+      return 'rounded-xl border border-white/15 bg-black/10'
+    case 'classic':
+      return 'rounded-2xl shadow-md ring-2 ring-offset-1 ring-offset-transparent'
+    default:
+      return 'rounded-[1.25rem] bg-black/15 shadow-lg ring-1 ring-white/10'
+  }
 }
 
 interface StripPreviewEditorProps {
   shots: PhotoShot[]
   layout: BoothLayout
   theme: FrameTheme
-  filter: PhotoFilter
+  filterCss: string
+  frameStyle: FrameStyleId
   stickers: Sticker[]
   selectedStickerId: string | null
   onSelectSticker: (id: string | null) => void
@@ -31,7 +45,8 @@ export default function StripPreviewEditor({
   shots,
   layout,
   theme,
-  filter,
+  filterCss,
+  frameStyle,
   stickers,
   selectedStickerId,
   onSelectSticker,
@@ -56,7 +71,7 @@ export default function StripPreviewEditor({
     const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [layout.id, shots.length])
+  }, [layout.id, shots.length, frameStyle])
 
   const previewSlots = buildPreviewSlots(shots, layout.shotCount)
   const gridClass = getPreviewGridClass(layout.id)
@@ -129,17 +144,28 @@ export default function StripPreviewEditor({
           {previewSlots.map((shot, i) => (
             <div
               key={shot?.id ?? `slot-${i}`}
-              className="pointer-events-none aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-black/20 shadow-lg ring-1 ring-white/10"
+              className={cn(
+                'pointer-events-none aspect-[4/3] overflow-hidden',
+                photoSlotClass(frameStyle)
+              )}
               style={{
-                boxShadow: '0 12px 28px -8px rgba(0,0,0,0.45)',
+                boxShadow:
+                  frameStyle === 'classic'
+                    ? `0 8px 24px -6px rgba(0,0,0,0.4), 0 0 0 2px ${rgbaFromHex(theme.accentColor, 0.55)}`
+                    : frameStyle === 'soft'
+                      ? '0 12px 28px -8px rgba(0,0,0,0.45)'
+                      : undefined,
               }}
             >
               {shot ? (
                 <img
                   src={shot.dataUrl}
                   alt={`Foto ${i + 1}`}
-                  className="h-full w-full object-cover"
-                  style={{ filter: filter.css !== 'none' ? filter.css : undefined }}
+                  className={cn(
+                    'h-full w-full object-cover',
+                    frameStyle === 'polaroid' && 'rounded-md'
+                  )}
+                  style={{ filter: filterCss !== 'none' ? filterCss : undefined }}
                   draggable={false}
                 />
               ) : (

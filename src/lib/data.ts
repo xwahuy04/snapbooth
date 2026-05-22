@@ -1,122 +1,9 @@
-import type { FrameTheme, BoothLayout, PhotoFilter } from '@/types'
+import type { BoothLayout } from '@/types'
 
-// ─── Themes ───────────────────────────────────────────────────
-export const THEMES: FrameTheme[] = [
-  {
-    id: 'midnight',
-    name: 'Midnight',
-    description: 'Dark & moody with neon accents',
-    category: 'neon',
-    previewColor: '#0a0a1a',
-    accentColor: '#ff2d78',
-    filterCSS: 'contrast(1.1) saturate(1.2)',
-    borderStyle: '6px solid #ff2d78',
-    backgroundColor: '#0a0a1a',
-    textColor: '#ff2d78',
-    watermark: '✦ SNAPBOOTH',
-    emoji: '🌙',
-  },
-  {
-    id: 'sakura',
-    name: 'Sakura',
-    description: 'Soft pink Japanese bloom',
-    category: 'cute',
-    previewColor: '#fce4ec',
-    accentColor: '#e91e8c',
-    filterCSS: 'saturate(1.1) brightness(1.05)',
-    borderStyle: '6px solid #f48fb1',
-    backgroundColor: '#fce4ec',
-    textColor: '#880e4f',
-    watermark: '❀ SNAPBOOTH',
-    emoji: '🌸',
-  },
-  {
-    id: 'film35',
-    name: '35mm Film',
-    description: 'Vintage film grain aesthetic',
-    category: 'film',
-    previewColor: '#1a1410',
-    accentColor: '#d4a84b',
-    filterCSS: 'sepia(0.4) contrast(1.15) brightness(0.9)',
-    borderStyle: '6px solid #d4a84b',
-    backgroundColor: '#1a1410',
-    textColor: '#d4a84b',
-    watermark: '▷ 35mm FILM',
-    emoji: '🎞️',
-  },
-  {
-    id: 'retro90',
-    name: 'Retro 90s',
-    description: 'Bold colors & lo-fi vibes',
-    category: 'retro',
-    previewColor: '#1a0533',
-    accentColor: '#00e5ff',
-    filterCSS: 'saturate(1.4) contrast(1.1)',
-    borderStyle: '6px solid #00e5ff',
-    backgroundColor: '#1a0533',
-    textColor: '#00e5ff',
-    watermark: '◈ RETRO',
-    emoji: '📺',
-  },
-  {
-    id: 'clean',
-    name: 'Clean White',
-    description: 'Minimal & timeless',
-    category: 'minimal',
-    previewColor: '#ffffff',
-    accentColor: '#111111',
-    filterCSS: 'none',
-    borderStyle: '6px solid #111111',
-    backgroundColor: '#ffffff',
-    textColor: '#111111',
-    watermark: '· SNAPBOOTH ·',
-    emoji: '◻️',
-  },
-  {
-    id: 'forest',
-    name: 'Forest',
-    description: 'Earthy greens & natural tones',
-    category: 'minimal',
-    previewColor: '#1a2e1a',
-    accentColor: '#4caf50',
-    filterCSS: 'saturate(0.9) hue-rotate(10deg)',
-    borderStyle: '6px solid #4caf50',
-    backgroundColor: '#1a2e1a',
-    textColor: '#a5d6a7',
-    watermark: '🌿 SNAPBOOTH',
-    emoji: '🌿',
-  },
-  {
-    id: 'candy',
-    name: 'Candy Pop',
-    description: 'Sweet pastel rainbow',
-    category: 'cute',
-    previewColor: '#fff0f5',
-    accentColor: '#ff80ab',
-    filterCSS: 'brightness(1.1) saturate(1.3)',
-    borderStyle: '6px solid #ff80ab',
-    backgroundColor: '#fff0f5',
-    textColor: '#c2185b',
-    watermark: '♡ SNAPBOOTH',
-    emoji: '🍬',
-  },
-  {
-    id: 'noir',
-    name: 'Film Noir',
-    description: 'Classic black & white drama',
-    category: 'film',
-    previewColor: '#111',
-    accentColor: '#aaa',
-    filterCSS: 'grayscale(1) contrast(1.2)',
-    borderStyle: '6px solid #666',
-    backgroundColor: '#111',
-    textColor: '#eee',
-    watermark: '◆ NOIR',
-    emoji: '🎬',
-  },
-]
+export { THEMES, THEME_CATEGORIES } from '@/lib/themes'
+export { FILTERS } from '@/lib/filters'
+export { FRAME_STYLES } from '@/lib/frame-styles'
 
-// ─── Layouts ──────────────────────────────────────────────────
 export const LAYOUTS: BoothLayout[] = [
   { id: '1x1', label: '1 Foto', shotCount: 1, description: 'Single portrait shot', icon: '⬜' },
   { id: '2x1', label: '2 Foto', shotCount: 2, description: 'Duo vertical strip', icon: '▬' },
@@ -124,24 +11,23 @@ export const LAYOUTS: BoothLayout[] = [
   { id: '2x2', label: '2x2 Grid', shotCount: 4, description: '2×2 photo grid', icon: '⊞' },
 ]
 
-// ─── Filters ──────────────────────────────────────────────────
-export const FILTERS: PhotoFilter[] = [
-  { id: 'none',     name: 'Original',   css: 'none',                                         preview: '🔲' },
-  { id: 'vivid',    name: 'Vivid',      css: 'saturate(1.6) contrast(1.1)',                  preview: '🌈' },
-  { id: 'fade',     name: 'Fade',       css: 'brightness(1.1) saturate(0.8) contrast(0.9)',  preview: '🌫️' },
-  { id: 'warm',     name: 'Warm',       css: 'sepia(0.3) brightness(1.05)',                  preview: '🌅' },
-  { id: 'cool',     name: 'Cool',       css: 'hue-rotate(180deg) saturate(0.9)',             preview: '🧊' },
-  { id: 'bw',       name: 'B&W',        css: 'grayscale(1)',                                 preview: '⬛' },
-  { id: 'drama',    name: 'Drama',      css: 'contrast(1.5) brightness(0.85)',               preview: '🎭' },
-  { id: 'golden',   name: 'Golden',     css: 'sepia(0.6) brightness(1.1) saturate(1.3)',     preview: '✨' },
-  { id: 'lomo',     name: 'Lomo',       css: 'saturate(1.8) contrast(1.3) brightness(0.9)', preview: '🎞️' },
-]
-
-// ─── Sticker Packs ────────────────────────────────────────────
 export const STICKER_PACKS = {
   hearts: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💖', '💝'],
-  faces:  ['😊', '😎', '🥰', '😜', '🤩', '😂', '🥳', '😍', '🤪', '😇'],
+  faces: ['😊', '😎', '🥰', '😜', '🤩', '😂', '🥳', '😍', '🤪', '😇'],
   nature: ['🌸', '🌿', '⭐', '🌙', '☀️', '🌈', '❄️', '🌺', '🍀', '✨'],
-  fun:    ['🎉', '🎊', '🎈', '🎀', '🎁', '🏆', '🎯', '🎸', '🎨', '🎭'],
-  food:   ['🍓', '🍑', '🍒', '🍰', '🧁', '🍩', '🍭', '🫧', '🧋', '🍦'],
+  fun: ['🎉', '🎊', '🎈', '🎀', '🎁', '🏆', '🎯', '🎸', '🎨', '🎭'],
+  food: ['🍓', '🍑', '🍒', '🍰', '🧁', '🍩', '🍭', '🫧', '🧋', '🍦'],
+  travel: ['✈️', '🗺️', '🧳', '🏖️', '🗽', '🎡', '⛰️', '🚗', '🛳️', '🌆'],
+  symbols: ['✨', '💫', '🔥', '💯', '✅', '⭐', '🌟', '💎', '🦋', '🎵'],
 }
+
+export const CAPTION_PRESETS = [
+  'Best day ever!',
+  'Squad goals ✨',
+  'Memories',
+  'Just us 💕',
+  'Party mode',
+  'Vibes only',
+  '2026',
+  '',
+]

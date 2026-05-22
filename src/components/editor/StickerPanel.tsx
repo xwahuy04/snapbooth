@@ -14,6 +14,8 @@ const PACK_LABELS: Record<PackKey, string> = {
   nature: '🌸 Alam',
   fun: '🎉 Fun',
   food: '🍓 Makanan',
+  travel: '✈️ Travel',
+  symbols: '⭐ Simbol',
 }
 
 interface StickerPanelProps {
@@ -22,6 +24,7 @@ interface StickerPanelProps {
   onAdd: (emoji: string) => void
   onSelect: (id: string) => void
   onRemove: (id: string) => void
+  onClearAll?: () => void
   spacious?: boolean
 }
 
@@ -31,6 +34,7 @@ export default function StickerPanel({
   onAdd,
   onSelect,
   onRemove,
+  onClearAll,
   spacious,
 }: StickerPanelProps) {
   const [activePack, setActivePack] = useState<PackKey>('hearts')
@@ -44,7 +48,14 @@ export default function StickerPanel({
 
       {stickers.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="section-label">Stiker di strip ({stickers.length})</span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="section-label">Stiker di strip ({stickers.length})</span>
+            {onClearAll && (
+              <button type="button" className="btn-ghost text-xs text-red-400" onClick={onClearAll}>
+                Hapus semua
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             {stickers.map((s) => {
               const active = s.id === selectedStickerId
@@ -106,7 +117,7 @@ export default function StickerPanel({
       <div
         className={cn(
           'grid gap-2.5',
-          spacious ? 'grid-cols-4 gap-3 sm:grid-cols-5 sm:gap-4' : 'grid-cols-5 gap-2'
+          spacious ? 'grid-cols-4 gap-3 sm:grid-cols-6 sm:gap-3' : 'grid-cols-5 gap-2'
         )}
       >
         {STICKER_PACKS[activePack].map((emoji) => (
