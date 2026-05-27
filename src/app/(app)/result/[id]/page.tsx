@@ -7,6 +7,13 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { THEMES } from '@/lib/data'
 import { signOut } from 'next-auth/react'
+import { pageMetadata } from '@/lib/seo'
+
+export const metadata = pageMetadata({
+  title: 'Hasil Foto',
+  path: '/result',
+  noIndex: true,
+})
 
 interface ResultPageProps {
   params: Promise<{ id: string }>

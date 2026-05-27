@@ -7,6 +7,13 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { THEMES } from '@/lib/data'
 import { signOut } from 'next-auth/react'
+import { pageMetadata } from '@/lib/seo'
+
+export const metadata = pageMetadata({
+  title: 'Galeri Saya',
+  path: '/gallery',
+  noIndex: true,
+})
 
 export const dynamic = 'force-dynamic'
 
