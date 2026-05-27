@@ -6,8 +6,8 @@ import PageContainer from '@/components/ui/PageContainer'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { THEMES } from '@/lib/data'
-import { signOut } from 'next-auth/react'
 import { pageMetadata } from '@/lib/seo'
+import SignOutButton from '@/components/auth/SignOutButton'
 
 export const metadata = pageMetadata({
   title: 'Hasil Foto',
@@ -46,11 +46,6 @@ export default async function SavedResultPage({ params }: ResultPageProps) {
     minute: '2-digit',
   })
 
-  async function handleSignOut() {
-    'use server'
-    await signOut({ redirect: true, callbackUrl: '/auth/login' })
-  }
-
   return (
     <AppShell
       headerAction={
@@ -60,11 +55,13 @@ export default async function SavedResultPage({ params }: ResultPageProps) {
               <RotateCcw size={13} /> Foto Baru
             </button>
           </Link>
-          <form action={handleSignOut}>
-            <button className="btn-secondary text-xs" title="Keluar">
-              <LogOut size={13} />
-            </button>
-          </form>
+          <SignOutButton
+            callbackUrl="/"
+            className="btn-secondary text-xs"
+            title="Keluar"
+          >
+            <LogOut size={13} />
+          </SignOutButton>
         </div>
       }
     >

@@ -1,19 +1,19 @@
 import Link from 'next/link'
-import { Camera, LogOut } from 'lucide-react'
+import { redirect } from 'next/navigation'
+import { Camera } from 'lucide-react'
 import FeaturesSection from '@/components/home/FeaturesSection'
 import FooterCtaSection from '@/components/home/FooterCtaSection'
 import HeroSection from '@/components/home/HeroSection'
 import SiteFooter from '@/components/layout/SiteFooter'
 import SiteHeader from '@/components/layout/SiteHeader'
 import { auth } from '@/lib/auth'
-import { signOut } from 'next-auth/react'
+import SignOutButton from '@/components/auth/SignOutButton'
 
 export default async function HomePage() {
   const session = await auth()
 
-  async function handleSignOut() {
-    'use server'
-    await signOut({ redirect: true, callbackUrl: '/' })
+  if (session?.user) {
+    redirect('/gallery')
   }
 
   return (
@@ -28,11 +28,7 @@ export default async function HomePage() {
                   <Camera size={14} /> Galeri Saya
                 </button>
               </Link>
-              <form action={handleSignOut}>
-                <button className="btn-ghost px-3 py-2.5 text-[13px]" title="Keluar">
-                  <LogOut size={14} />
-                </button>
-              </form>
+              <SignOutButton callbackUrl="/" />
             </div>
           ) : (
             <div className="flex items-center gap-2">

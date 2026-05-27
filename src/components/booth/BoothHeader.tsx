@@ -1,6 +1,7 @@
 'use client'
 
-import { Camera, RotateCcw } from 'lucide-react'
+import Link from 'next/link'
+import { Camera, RotateCcw, Image } from 'lucide-react'
 import StepIndicator from '@/components/ui/StepIndicator'
 import { usePhotoBoothContext } from '@/providers/PhotoBoothProvider'
 
@@ -11,21 +12,24 @@ export default function BoothHeader() {
     <header className="site-header">
       <div className="mx-auto grid h-[4.25rem] max-w-[90rem] grid-cols-3 items-center px-5 sm:px-8">
         <div className="flex justify-start">
-          <button type="button" onClick={resetSession} className="group flex cursor-pointer items-center gap-2.5">
+          <Link href="/" className="group flex cursor-pointer items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent shadow-glow transition-transform duration-300 group-hover:rotate-12">
               <Camera size={18} className="text-white" />
             </div>
             <span className="font-display hidden text-xl font-black tracking-tight sm:block">
               Snap<span className="text-accent-light">Booth</span>
             </span>
-          </button>
+          </Link>
         </div>
 
         <div className="flex justify-center">
           <StepIndicator currentStep={step} />
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end items-center gap-3">
+          <Link href="/gallery" className="btn-secondary flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-semibold sm:text-xs">
+            <Image size={13} /> Galeri Saya
+          </Link>
           <button type="button" className="btn-ghost cursor-pointer text-xs font-semibold" onClick={resetSession}>
             <RotateCcw size={13} className="mr-1.5" /> Reset
           </button>

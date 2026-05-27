@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
 import BoothWorkspace from '@/components/booth/BoothWorkspace'
 import { pageMetadata } from '@/lib/seo'
 
@@ -8,6 +10,11 @@ export const metadata = pageMetadata({
   noIndex: true,
 })
 
-export default function BoothPage() {
+export default async function BoothPage() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect('/auth/login')
+  }
+
   return <BoothWorkspace />
 }

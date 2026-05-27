@@ -5,9 +5,9 @@ import AppShell from '@/components/layout/AppShell'
 import PageContainer from '@/components/ui/PageContainer'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { THEMES } from '@/lib/data'
-import { signOut } from 'next-auth/react'
 import { pageMetadata } from '@/lib/seo'
+import SignOutButton from '@/components/auth/SignOutButton'
+import GalleryGrid from '@/components/gallery/GalleryGrid'
 
 export const metadata = pageMetadata({
   title: 'Galeri Saya',
@@ -32,11 +32,6 @@ export default async function GalleryPage() {
     orderBy: { createdAt: 'desc' },
   })
 
-  async function handleSignOut() {
-    'use server'
-    await signOut({ redirect: true, callbackUrl: '/auth/login' })
-  }
-
   return (
     <AppShell
       headerAction={
@@ -46,11 +41,13 @@ export default async function GalleryPage() {
               <Camera size={13} /> Mulai Foto
             </button>
           </Link>
-          <form action={handleSignOut}>
-            <button className="btn-secondary text-xs" title="Keluar">
-              <LogOut size={13} />
-            </button>
-          </form>
+          <SignOutButton
+            callbackUrl="/"
+            className="btn-secondary text-xs"
+            title="Keluar"
+          >
+            <LogOut size={13} />
+          </SignOutButton>
         </div>
       }
     >
@@ -78,7 +75,16 @@ export default async function GalleryPage() {
           </div>
         </header>
 
-        {sessions.length === 0 ? <EmptyGallery /> : <GalleryGrid sessions={sessions} />}
+        {sessions.length === 0 ? (
+          <EmptyGallery />
+        ) : (
+          <GalleryGrid
+            sessions={sessions.map((s) => ({
+              ...s,
+              createdAt: s.createdAt.toISOString(),
+            }))}
+          />
+        )}
       </PageContainer>
     </AppShell>
   )
@@ -99,50 +105,6 @@ function EmptyGallery() {
           <Camera size={15} /> Mulai Foto Sekarang
         </button>
       </Link>
-    </div>
-  )
-}
-
-interface GallerySession {
-  id: string
-  imageUrl: string
-  themeId: string
-  createdAt: Date
-}
-
-function GalleryGrid({ sessions }: { sessions: GallerySession[] }) {
-  return (
-    <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 md:gap-6">
-      {sessions.map((session) => {
-        const theme = THEMES.find((t) => t.id === session.themeId) ?? THEMES[0]
-        return (
-          <Link key={session.id} href={`/result/${session.id}`} className="group flex flex-col">
-            <div
-              className="overflow-hidden rounded-xl border border-border p-3 shadow-sm transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-lg"
-              style={{ background: theme.backgroundColor }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={session.imageUrl}
-                alt="Saved Photo Strip"
-                className="h-auto w-full rounded-lg object-cover"
-                loading="lazy"
-              />
-            </div>
-            <div className="mt-3 flex items-center justify-between px-0.5">
-              <span className="text-[11px] font-medium text-subtle">
-                {new Date(session.createdAt).toLocaleDateString('id-ID', {
-                  day: '2-digit',
-                  month: 'short',
-                })}
-              </span>
-              <span className="text-sm opacity-60 transition-opacity group-hover:opacity-100">
-                {theme.emoji ?? '✨'}
-              </span>
-            </div>
-          </Link>
-        )
-      })}
     </div>
   )
 }
