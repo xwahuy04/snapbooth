@@ -16,6 +16,9 @@ const PACK_LABELS: Record<PackKey, string> = {
   food: '🍓 Makanan',
   travel: '✈️ Travel',
   symbols: '⭐ Simbol',
+  animals: '🐶 Hewan',
+  sparkle: '✨ Sparkle',
+  aesthetic: '🎀 Aesthetic',
 }
 
 interface StickerPanelProps {

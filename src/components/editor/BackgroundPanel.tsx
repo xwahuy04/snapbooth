@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { cn } from '@/lib/cn'
-import { BACKGROUNDS } from '@/lib/backgrounds'
-import type { StripBackground } from '@/types'
+import { BACKGROUNDS, BACKGROUND_CATEGORIES } from '@/lib/backgrounds'
+import type { BackgroundCategory, StripBackground } from '@/types'
 
 interface BackgroundPanelProps {
   selectedId: string
@@ -10,16 +11,55 @@ interface BackgroundPanelProps {
 }
 
 export default function BackgroundPanel({ selectedId, onChange }: BackgroundPanelProps) {
+  const [activeCategory, setActiveCategory] = useState<BackgroundCategory | 'all'>('all')
+
+  const filtered: StripBackground[] =
+    activeCategory === 'all'
+      ? BACKGROUNDS
+      : BACKGROUNDS.filter((bg) => bg.category === activeCategory)
+
   const selected = BACKGROUNDS.find((bg) => bg.id === selectedId)
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <p className="text-xs leading-relaxed text-muted">
-        Pilih latar belakang yang indah untuk strip foto Anda. Kombinasikan dengan tema untuk hasil maksimal.
+        Pilih latar belakang untuk strip foto Anda. Kombinasikan dengan tema untuk hasil maksimal.
       </p>
 
+      {/* Category filter tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        <button
+          type="button"
+          onClick={() => setActiveCategory('all')}
+          className={cn(
+            'shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all',
+            activeCategory === 'all'
+              ? 'border-accent-ring bg-accent-soft text-accent-light'
+              : 'border-border bg-surface-raised text-muted hover:text-foreground'
+          )}
+        >
+          🎨 Semua
+        </button>
+        {BACKGROUND_CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => setActiveCategory(cat.id)}
+            className={cn(
+              'shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all',
+              activeCategory === cat.id
+                ? 'border-accent-ring bg-accent-soft text-accent-light'
+                : 'border-border bg-surface-raised text-muted hover:text-foreground'
+            )}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Background grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {BACKGROUNDS.map((bg) => (
+        {filtered.map((bg) => (
           <button
             key={bg.id}
             type="button"
@@ -53,7 +93,7 @@ export default function BackgroundPanel({ selectedId, onChange }: BackgroundPane
       {selected && (
         <div className="rounded-xl border border-border bg-surface-card p-3">
           <p className="text-xs text-muted">{selected.description}</p>
-          <p className="mt-1 text-[10px] font-mono text-subtle">{selected.value}</p>
+          <p className="mt-1 text-[10px] font-mono text-subtle">{selected.value.slice(0, 60)}{selected.value.length > 60 ? '…' : ''}</p>
         </div>
       )}
     </div>

@@ -75,7 +75,7 @@ export interface StripBackground {
   emoji?: string
 }
 
-export type BackgroundCategory = 'aesthetic' | 'gradient' | 'pattern' | 'vibrant'
+export type BackgroundCategory = 'aesthetic' | 'gradient' | 'pattern' | 'vibrant' | 'dark' | 'retro' | 'nature' | 'seasonal'
 
 // ─── Sticker ──────────────────────────────────────────────────
 export interface Sticker {

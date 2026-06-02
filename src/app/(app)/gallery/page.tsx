@@ -53,12 +53,6 @@ export default async function GalleryPage() {
     >
       <PageContainer size="wide" className="flex-1">
         <header className="mb-10">
-          <Link
-            href="/"
-            className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted transition-colors hover:text-foreground"
-          >
-            <ArrowLeft size={12} /> Kembali ke Home
-          </Link>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl">
