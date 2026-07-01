@@ -39,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <meta name="google-site-verification" content="O5DmhSAFfzsItKTU_q_jZovLM4-w3yyEd2nmwt0Brko" />
       </head>
       <body className="font-display antialiased">
         <AuthProvider>{children}</AuthProvider>
